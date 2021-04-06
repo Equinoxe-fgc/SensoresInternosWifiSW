@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.wear.widget.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/dark_grey"
+    android:padding="@dimen/box_inset_layout_padding"
+    tools:context=".MainActivity"
+    tools:deviceIds="wear">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textBattery"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ReleaseDate"
+            android:textAlignment="center"
+            android:translationY="5dp" />
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+            <Button
+                android:id="@+id/buttonOptions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/Options"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/buttonStart"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:onClick="onClickStartSending"
+                android:text="@string/StartSensing" />
+
+            <CheckBox
+                android:id="@+id/checkBoxAccelerometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="@string/Accelerometer"
+                android:translationX="40dp" />
+
+            <CheckBox
+                android:id="@+id/checkBoxGyroscope"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="@string/Gyroscope"
+                android:translationX="40dp" />
+
+            <CheckBox
+                android:id="@+id/checkBoxMagnetometer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="@string/Magnetometer"
+                android:translationX="40dp" />
+
+            <CheckBox
+                android:id="@+id/checkBoxHR"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:text="@string/HeartRate"
+                android:translationX="40dp" />
+            </LinearLayout>
+    </LinearLayout>
+
+</androidx.wear.widget.BoxInsetLayout>
