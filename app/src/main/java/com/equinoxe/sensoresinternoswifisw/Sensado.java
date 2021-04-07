@@ -18,8 +18,9 @@ import java.util.concurrent.TimeUnit;
 
 public class Sensado extends FragmentActivity implements AmbientModeSupport.AmbientCallbackProvider {
     private static final String AMBIENT_UPDATE_ACTION = "com.equinoxe.sensoresinternoswifisw.action.AMBIENT_UPDATE";
-    public static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(60);
 
+    public static final long TIEMPO_GRABACION_DATOS = TimeUnit.SECONDS.toMillis(120);
+    public static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(60);
     public static final String NOTIFICATION = "com.equinoxe.sensoresinternoswifisw.NOTIFICACION";
 
     final static int GIROSCOPO    = 0;
@@ -40,6 +41,8 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
 
     private TextView textViewMsg, textBattery, textViewAccelerometer, textViewGyroscope, textViewMagnetometer, textViewHR;
 
+    Intent intentServicioDatosInternalSensor;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,12 +50,12 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
 
         registerReceiver(receiver, new IntentFilter(NOTIFICATION));
 
-        textBattery = (TextView) findViewById(R.id.textBattery);
-        textViewAccelerometer = (TextView) findViewById(R.id.textViewAccelerometer);
-        textViewGyroscope = (TextView) findViewById(R.id.textViewGyroscope);
-        textViewMagnetometer = (TextView) findViewById(R.id.textViewMagnetometer);
-        textViewHR = (TextView) findViewById(R.id.textViewHR);
-        textViewMsg = (TextView) findViewById(R.id.textViewMsg);
+        textBattery = findViewById(R.id.textBattery);
+        textViewAccelerometer = findViewById(R.id.textViewAccelerometer);
+        textViewGyroscope = findViewById(R.id.textViewGyroscope);
+        textViewMagnetometer = findViewById(R.id.textViewMagnetometer);
+        textViewHR = findViewById(R.id.textViewHR);
+        textViewMsg = findViewById(R.id.textViewMsg);
 
         Bundle extras = getIntent().getExtras();
         bAccelerometer = extras.getBoolean("bAccelerometer", false);
@@ -81,11 +84,11 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
     }
 
     private void refreshDisplayAndSetNextUpdate() {
-        if (controller.isAmbient()) {
+        /*if (controller.isAmbient()) {
             // Implement data retrieval and update the screen for ambient mode
         } else {
             // Implement data retrieval and update the screen for interactive mode
-        }
+        }*/
 
         IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
         Intent batteryStatus = registerReceiver(null, ifilter);
@@ -155,11 +158,12 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
     }
 
     public void onClickStop(View v) {
+        stopService(intentServicioDatosInternalSensor);
         finish();
     }
 
     private void crearServicio() {
-            Intent intentServicioDatosInternalSensor = new Intent(this, ServiceDatosInternalSensor.class);
+            intentServicioDatosInternalSensor = new Intent(this, ServiceDatosInternalSensor.class);
 
             intentServicioDatosInternalSensor.putExtra(getString(R.string.Accelerometer), bAccelerometer);
             intentServicioDatosInternalSensor.putExtra(getString(R.string.Gyroscope), bGyroscope);

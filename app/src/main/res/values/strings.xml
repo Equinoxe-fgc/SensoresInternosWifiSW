@@ -4,14 +4,15 @@
     This string is used for square devices and overridden by hello_world in
     values-round/strings.xml for round devices.
     -->
-    <string name="hello_world">Hello Square World!</string>
+    <string name="ReleaseDate">07/04/2021</string>
+
+    <string name="ERROR_FICHERO">Error opening file</string>
     <string name="title_activity_sensado">Sensado</string>
 
     <string name="Gyroscope">Gyroscope</string>
     <string name="Accelerometer">Accelerometer</string>
     <string name="Magnetometer">Magnetometer</string>
     <string name="HeartRate">Heart Rate</string>
-    <string name="ReleaseDate">06/04/2021</string>
     <string name="Options">Options</string>
     <string name="StartSensing">Start sensing</string>
 

@@ -41,20 +41,19 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
     Timer timerUpdateData;
+    Timer timerGrabarDatos;
 
     DecimalFormat df;
 
-    boolean bLogStats;
-    String sFileNameDataLog;
-
     SimpleDateFormat sdf;
-    FileOutputStream fOutDataLog;
     FileOutputStream fOut;
 
     long lNumMsgGiroscopo, lNumMsgMagnetometro, lNumMsgAcelerometro, lNumMsgHR;
 
     PowerManager powerManager;
     PowerManager.WakeLock wakeLock;
+
+    SensorData []dataAccelerometer = new SensorData[2000];
 
     @Override
     public void onCreate() {
@@ -169,16 +168,14 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             sensorManager.registerListener(this, sensorHeartRate, SensorManager.SENSOR_DELAY_GAME);
         }
 
-        /*if (bLogStats) {
-            sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
 
-            batInfo = new BatteryInfoBT();
+            sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
 
             File file;
             int iNumFichero = 0;
             String sFichero;
             do {
-                sFichero = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" + iNumDevices + "_" + iPeriodo + "_" + iNumFichero + "_Interno.txt";
+                sFichero = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  iNumFichero + "_Interno.txt";
                 file = new File(sFichero);
                 iNumFichero++;
             } while (file.exists());
@@ -189,7 +186,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 fOut = new FileOutputStream(sFichero, false);
                 String sModel = Build.MODEL;
                 sModel = sModel.replace(" ", "_");
-                String sCadena = sModel + " " + iNumDevices + " " + iPeriodo + " " + bLocation + " " + bSendServer + " " +
+                String sCadena = sModel + " " +
                                  bAcelerometro + " " + bGiroscopo + " " + bMagnetometro + " " + bHeartRate + " " + currentDateandTime + "\n";
                 fOut.write(sCadena.getBytes());
                 fOut.flush();
@@ -204,8 +201,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             };
 
             timerGrabarDatos = new Timer();
-            timerGrabarDatos.scheduleAtFixedRate(timerTaskGrabarDatos, Datos.lTiempoGrabacionDatos, Datos.lTiempoGrabacionDatos);
-        }*/
+            timerGrabarDatos.scheduleAtFixedRate(timerTaskGrabarDatos, Sensado.TIEMPO_GRABACION_DATOS, Sensado.TIEMPO_GRABACION_DATOS);
+
 
         Message msg = mServiceHandler.obtainMessage();
         msg.arg1 = startId;
@@ -226,9 +223,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             long lNumMsg = lNumMsgGiroscopo + lNumMsgMagnetometro + lNumMsgAcelerometro + lNumMsgHR;
             sCadena = "(" + lNumMsg + ",0)";
 
+            sCadena += "(" + lNumMsgAcelerometro + ",0)";
             sCadena += "(" + lNumMsgGiroscopo + ",0)";
             sCadena += "(" + lNumMsgMagnetometro + ",0)";
-            sCadena += "(" + lNumMsgAcelerometro + ",0)";
             sCadena += "(" + lNumMsgHR + ",0)";
 
             sCadena += "(" + lNumMsg + ",0)\n";
@@ -247,32 +244,31 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 sCadenaAcelerometro = "A: " + df.format(event.values[0]) + " "
                                             + df.format(event.values[1]) + " "
                                             + df.format(event.values[2]);
-                procesarDatosSensados(Sensor.TYPE_ACCELEROMETER, event.values);
+                procesarDatosSensados(Sensor.TYPE_ACCELEROMETER, event.timestamp, event.values);
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 lNumMsgGiroscopo++;
                 sCadenaGiroscopo = "G: " + df.format(event.values[0]) + " "
                                          + df.format(event.values[1]) + " "
                                          + df.format(event.values[2]);
-                procesarDatosSensados(Sensor.TYPE_GYROSCOPE, event.values);
+                procesarDatosSensados(Sensor.TYPE_GYROSCOPE, event.timestamp, event.values);
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
                 lNumMsgMagnetometro++;
                 sCadenaMagnetometro = "M: " + df.format(event.values[0]) + " "
                                             + df.format(event.values[1]) + " "
                                             + df.format(event.values[2]);
-                procesarDatosSensados(Sensor.TYPE_MAGNETIC_FIELD, event.values);
+                procesarDatosSensados(Sensor.TYPE_MAGNETIC_FIELD, event.timestamp, event.values);
                 break;
             case Sensor.TYPE_HEART_RATE:
-                //long lNumMsg = lNumMsgGiroscopo + lNumMsgMagnetometro + lNumMsgAcelerometro + lNumMsgHR;
                 lNumMsgHR++;
                 sCadenaHeartRate = "HR: " + df.format(event.values[0]) + " - " + lNumMsgHR;
-                procesarDatosSensados(Sensor.TYPE_HEART_RATE, event.values);
+                procesarDatosSensados(Sensor.TYPE_HEART_RATE, event.timestamp, event.values);
                 break;
         }
     }
 
-    private void procesarDatosSensados(int iSensor, float values[]) {
+    private void procesarDatosSensados(int iSensor, long timeStamp, float []values) {
         switch (iSensor) {
             case Sensor.TYPE_ACCELEROMETER:
                 break;
@@ -303,13 +299,12 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     public void onDestroy() {
         super.onDestroy();
 
-        /*if (bLogStats) {
-            try {
-                timerGrabarDatos.cancel();
-                grabarMedidas();
-                fOut.close();
-            } catch (Exception e) {}
-        }*/
+        try {
+            timerGrabarDatos.cancel();
+            grabarMedidas();
+            fOut.close();
+        } catch (Exception e) {}
+
 
         if (bAcelerometro) {
             sensorManager.unregisterListener(this, sensorAcelerometro);

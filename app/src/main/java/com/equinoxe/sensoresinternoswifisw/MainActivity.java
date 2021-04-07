@@ -1,7 +1,9 @@
 package com.equinoxe.sensoresinternoswifisw;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
@@ -11,6 +13,7 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import java.util.List;
@@ -41,20 +44,16 @@ public class MainActivity extends FragmentActivity {
         for (Sensor sensor : lista) {
             switch (sensor.getType()) {
                 case Sensor.TYPE_ACCELEROMETER:
-                    if (sensor.getName().compareTo(getString(R.string.Accelerometer)) == 0)
-                        bAccelerometer = true;
+                    bAccelerometer = true;
                     break;
                 case Sensor.TYPE_GYROSCOPE:
-                    if (sensor.getName().compareTo(getString(R.string.Gyroscope)) == 0)
-                        bGyroscope = true;
+                    bGyroscope = true;
                     break;
                 case Sensor.TYPE_MAGNETIC_FIELD:
-                    if (sensor.getName().compareTo(getString(R.string.Magnetometer)) == 0)
-                        bMagneticField = true;
+                    bMagneticField = true;
                     break;
                 case Sensor.TYPE_HEART_RATE:
-                    if (sensor.getName().compareTo(getString(R.string.HeartRate)) == 0)
-                        bHR = true;
+                    bHR = true;
                     break;
             }
         }
@@ -67,6 +66,8 @@ public class MainActivity extends FragmentActivity {
             checkMagnetometer.setEnabled(true);
         if (bHR)
             checkHR.setEnabled(true);
+
+        checkForPermissions();
 
         checkAccelerometer.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -111,5 +112,25 @@ public class MainActivity extends FragmentActivity {
         intent.putExtra("bHR", checkHR.isChecked());
         startActivity(intent);
     }
+
+    private void checkForPermissions() {
+        String[] PERMISSIONS_STORAGE = {
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+        };
+
+        int permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, 1);
+        }
+
+        /*permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BODY_SENSORS}, 1);
+        }*/
+    }
+
 
 }
