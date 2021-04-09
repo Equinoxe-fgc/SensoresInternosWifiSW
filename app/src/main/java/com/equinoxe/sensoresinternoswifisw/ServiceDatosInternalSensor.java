@@ -6,6 +6,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -32,7 +33,11 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class ServiceDatosInternalSensor extends Service implements SensorEventListener {
-    private boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate;
+    private static int MUESTRAS_POR_SEGUNDO_GAME = 60;
+    private static int MUESTRAS_POR_SEGUNDO_FASTEST = 110;
+    private static int SEGUNDOS_VENTANA = 5;
+
+    private boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON;
 
     private SensorManager sensorManager;
     private Sensor sensorAcelerometro, sensorGiroscopo, sensorMagnetometro, sensorHeartRate;
@@ -53,7 +58,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     PowerManager powerManager;
     PowerManager.WakeLock wakeLock;
 
-    SensorData []dataAccelerometer = new SensorData[2000];
+    int iTamBuffer;
+    SensorData []dataAccelerometer;
+    int iPosDataAccelerometer = 0;
+
+    String sServer;
+    int iPort;
+    EnvioDatosSocket envioAsync;
 
     @Override
     public void onCreate() {
@@ -150,22 +161,29 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         bMagnetometro = intent.getBooleanExtra(getString(R.string.Magnetometer), true);
         bHeartRate = intent.getBooleanExtra(getString(R.string.HeartRate), true);
 
+        SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
+        sServer = pref.getString("server", "127.0.0.1");
+        iPort = pref.getInt("puerto", 8000);
+        bFastestON = pref.getBoolean("FastON", false);
+
+        int iSensorDelay = (bFastestON)?SensorManager.SENSOR_DELAY_FASTEST:SensorManager.SENSOR_DELAY_GAME;
+
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (bAcelerometro) {
             sensorAcelerometro = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensorManager.registerListener(this, sensorAcelerometro, SensorManager.SENSOR_DELAY_GAME);
+            sensorManager.registerListener(this, sensorAcelerometro, iSensorDelay);
         }
         if (bGiroscopo) {
             sensorGiroscopo = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-            sensorManager.registerListener(this, sensorGiroscopo, SensorManager.SENSOR_DELAY_GAME);
+            sensorManager.registerListener(this, sensorGiroscopo, iSensorDelay);
         }
         if (bMagnetometro) {
             sensorMagnetometro = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-            sensorManager.registerListener(this, sensorMagnetometro, SensorManager.SENSOR_DELAY_GAME);
+            sensorManager.registerListener(this, sensorMagnetometro, iSensorDelay);
         }
         if (bHeartRate) {
             sensorHeartRate = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
-            sensorManager.registerListener(this, sensorHeartRate, SensorManager.SENSOR_DELAY_GAME);
+            sensorManager.registerListener(this, sensorHeartRate, iSensorDelay);
         }
 
 
@@ -187,7 +205,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 String sModel = Build.MODEL;
                 sModel = sModel.replace(" ", "_");
                 String sCadena = sModel + " " +
-                                 bAcelerometro + " " + bGiroscopo + " " + bMagnetometro + " " + bHeartRate + " " + currentDateandTime + "\n";
+                                 bAcelerometro + " " + bGiroscopo + " " + bMagnetometro + " " + bHeartRate + " " + bFastestON + " " + currentDateandTime + "\n";
                 fOut.write(sCadena.getBytes());
                 fOut.flush();
             } catch (Exception e) {
@@ -207,6 +225,14 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         Message msg = mServiceHandler.obtainMessage();
         msg.arg1 = startId;
         mServiceHandler.sendMessage(msg);
+
+        iTamBuffer = (bFastestON)?(MUESTRAS_POR_SEGUNDO_FASTEST*SEGUNDOS_VENTANA):(MUESTRAS_POR_SEGUNDO_GAME*SEGUNDOS_VENTANA);
+        dataAccelerometer = new SensorData[iTamBuffer];
+        for (int i = 0; i < iTamBuffer; i++)
+            dataAccelerometer[i] = new SensorData();
+
+        envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
+        envioAsync.start();
 
         return START_NOT_STICKY;
     }
@@ -271,6 +297,12 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     private void procesarDatosSensados(int iSensor, long timeStamp, float []values) {
         switch (iSensor) {
             case Sensor.TYPE_ACCELEROMETER:
+                dataAccelerometer[iPosDataAccelerometer].setData(timeStamp, values);
+                double dModule = dataAccelerometer[iPosDataAccelerometer].calculateModule();
+
+                envioAsync.setData((byte) 1, dataAccelerometer[iPosDataAccelerometer].getBytes());
+
+                iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 break;
@@ -300,10 +332,20 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         super.onDestroy();
 
         try {
+
             timerGrabarDatos.cancel();
             grabarMedidas();
             fOut.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        try {
+            envioAsync.finalize();
+        }
+        catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
 
 
         if (bAcelerometro) {

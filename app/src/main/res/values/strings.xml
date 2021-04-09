@@ -4,7 +4,7 @@
     This string is used for square devices and overridden by hello_world in
     values-round/strings.xml for round devices.
     -->
-    <string name="ReleaseDate">07/04/2021</string>
+    <string name="ReleaseDate">09/04/2021</string>
 
     <string name="ERROR_FICHERO">Error opening file</string>
     <string name="title_activity_sensado">Sensado</string>
@@ -14,9 +14,22 @@
     <string name="Magnetometer">Magnetometer</string>
     <string name="HeartRate">Heart Rate</string>
     <string name="Options">Options</string>
-    <string name="StartSensing">Start sensing</string>
+    <string name="StartSensing">Start</string>
 
     <string name="channel_name">CANAL_NOTIFICACION</string>
     <string name="channel_description">Channel for notifications</string>
     <string name="Stop">Stop</string>
+    <string name="FASTEST_ON">Fastest ON</string>
+    <string name="title_activity_options">Options</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="hello_world">Hello Square World!</string>
+    <string name="ServerIP">Server IP</string>
+    <string name="Port">Port Number</string>
+    <string name="Save">Save</string>
+    <string name="Options_saved">Options saved</string>
+    <string name="Incorrect_IP">Incorrect IP</string>
+    <string name="Incorrect_Port">Incorrect port</string>
 </resources>

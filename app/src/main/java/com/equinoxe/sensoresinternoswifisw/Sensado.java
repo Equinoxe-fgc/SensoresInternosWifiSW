@@ -30,7 +30,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
     final static int ERROR        = 100;
     final static int MSG          = 200;
 
-    boolean bAccelerometer, bGyroscope, bMagneticField, bHR;
+    boolean bAccelerometer, bGyroscope, bMagneticField, bHR, bFastestON;
 
     String sMsgAccelerometer, sMsgGyroscope, sMsgMagnetometer, sMsgHR;
 

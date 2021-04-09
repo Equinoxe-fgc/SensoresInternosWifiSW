@@ -113,6 +113,11 @@ public class MainActivity extends FragmentActivity {
         startActivity(intent);
     }
 
+    public void onClickOptions(View v) {
+        Intent intent = new Intent(this, Options.class);
+        startActivity(intent);
+    }
+
     private void checkForPermissions() {
         String[] PERMISSIONS_STORAGE = {
                 Manifest.permission.READ_EXTERNAL_STORAGE,
