@@ -23,8 +23,8 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
     public static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(60);
     public static final String NOTIFICATION = "com.equinoxe.sensoresinternoswifisw.NOTIFICACION";
 
-    final static int GIROSCOPO    = 0;
-    final static int ACELEROMETRO = 1;
+    final static int ACELEROMETRO = 0;
+    final static int GIROSCOPO    = 1;
     final static int MAGNETOMETRO = 2;
     final static int HEART_RATE   = 3;
     final static int ERROR        = 100;
@@ -80,6 +80,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
             }
         };
 
+        sMsgAccelerometer = sMsgGyroscope = sMsgMagnetometer = sMsgHR = "";
         crearServicio();
     }
 

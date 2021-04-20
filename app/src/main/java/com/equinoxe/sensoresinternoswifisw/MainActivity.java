@@ -130,11 +130,11 @@ public class MainActivity extends FragmentActivity {
             ActivityCompat.requestPermissions(this, PERMISSIONS_STORAGE, 1);
         }
 
-        /*permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS);
+        permission = ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS);
         if (permission != PackageManager.PERMISSION_GRANTED) {
             // We don't have permission so prompt the user
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BODY_SENSORS}, 1);
-        }*/
+        }
     }
 
 

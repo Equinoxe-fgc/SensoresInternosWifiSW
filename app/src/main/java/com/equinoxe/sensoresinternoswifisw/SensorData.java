@@ -13,8 +13,14 @@ public class SensorData {
     public void setData(long timeStamp, float []values) {
         this.timeStamp[0] = timeStamp;
         this.v1 = values[0];
-        this.v2 = values[1];
-        this.v3 = values[2];
+        // Se tiene solo un valor si es el HR. Se ponen los otros dos a 0
+        if (values.length > 1) {
+            this.v2 = values[1];
+            this.v3 = values[2];
+        } else {
+            this.v2 = 0.0f;
+            this.v3 = 0.0f;
+        }
 
         System.arraycopy(longToByteArray(timeStamp), 0, bytes, 0, Long.BYTES);
         System.arraycopy(floatToByteArray(v1), 0, bytes, Long.BYTES, Float.BYTES);

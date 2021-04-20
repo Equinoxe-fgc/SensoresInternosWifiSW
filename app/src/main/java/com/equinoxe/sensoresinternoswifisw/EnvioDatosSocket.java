@@ -79,7 +79,7 @@ public class EnvioDatosSocket extends Thread {
                     synchronized (this) {
                         try {
                             if (bDataToSend) {
-                                Log.d("EnvioDatosSocket.java", "Enviando datos");
+                                //Log.d("EnvioDatosSocket.java", "Enviando datos");
                                 outputStream.write(data);
                                 bDataToSend = false;
                             }
@@ -98,9 +98,9 @@ public class EnvioDatosSocket extends Thread {
                             fOut.write(sCadena.getBytes());
                             // Se vuelve a crear la conexión
                             socket = new Socket(sServer, iPuerto);
-                            Log.d("EnvioDatosSocket.java", "Socket creado de nuevo");
+                            //Log.d("EnvioDatosSocket.java", "Socket creado de nuevo");
                             outputStream = socket.getOutputStream();
-                            Log.d("EnvioDatosSocket.java", "Stream creado de nuevo");
+                            //Log.d("EnvioDatosSocket.java", "Stream creado de nuevo");
 
                             bConnectionState = true;
                         }
