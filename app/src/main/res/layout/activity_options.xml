@@ -9,63 +9,76 @@
     tools:context=".Options"
     tools:deviceIds="wear">
 
-    <LinearLayout
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/textView"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/ServerIP"
-            android:textAlignment="center" />
+            android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/editTextServerIP"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ems="10"
-            android:inputType="textPersonName"
-            android:textAlignment="center"
-            android:textSize="14sp" />
+            <TextView
+                android:id="@+id/textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/ServerIP"
+                android:textAlignment="center" />
 
-        <TextView
-            android:id="@+id/textView2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/Port"
-            android:textAlignment="center" />
+            <EditText
+                android:id="@+id/editTextServerIP"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:inputType="textPersonName"
+                android:textAlignment="center"
+                android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/editTextPortNumber"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ems="10"
-            android:inputType="phone"
-            android:textAlignment="center"
-            android:textSize="14sp" />
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/Port"
+                android:textAlignment="center" />
 
-        <CheckBox
-            android:id="@+id/checkBoxFastestON"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/FASTEST_ON"
-            android:textAlignment="center"
-            android:translationX="40dp" />
+            <EditText
+                android:id="@+id/editTextPortNumber"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ems="10"
+                android:inputType="phone"
+                android:textAlignment="center"
+                android:textSize="14sp" />
 
-        <Button
-            android:id="@+id/buttonSave"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:onClick="onClickSaveSettings"
-            android:text="@string/Save" />
-    </LinearLayout>
+            <CheckBox
+                android:id="@+id/checkBoxWifi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/Wifi"
+                android:translationX="40dp" />
+
+            <CheckBox
+                android:id="@+id/checkBoxFastestON"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/FASTEST_ON"
+                android:textAlignment="center"
+                android:translationX="40dp" />
+
+            <Button
+                android:id="@+id/buttonSave"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onClickSaveSettings"
+                android:text="@string/Save" />
+        </LinearLayout>
+    </ScrollView>
 
 </androidx.wear.widget.BoxInsetLayout>

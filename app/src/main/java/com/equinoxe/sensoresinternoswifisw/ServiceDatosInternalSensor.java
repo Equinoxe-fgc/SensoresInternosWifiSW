@@ -36,7 +36,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     private static int MUESTRAS_POR_SEGUNDO_FASTEST = 110;
     private static int SEGUNDOS_VENTANA = 5;
 
-    private boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON;
+    private boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON, bSendWifi;
 
     private SensorManager sensorManager;
     private Sensor sensorAcelerometro, sensorGiroscopo, sensorMagnetometro, sensorHeartRate;
@@ -135,6 +135,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         sServer = pref.getString("server", "127.0.0.1");
         iPort = pref.getInt("puerto", 8000);
         bFastestON = pref.getBoolean("FastON", false);
+        bSendWifi = pref.getBoolean("Wifi", false);
 
         int iSensorDelay = (bFastestON)?SensorManager.SENSOR_DELAY_FASTEST:SensorManager.SENSOR_DELAY_GAME;
 
@@ -251,8 +252,10 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         msg.arg1 = startId;
         mServiceHandler.sendMessage(msg);
 
-        envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
-        envioAsync.start();
+        if (bSendWifi) {
+            envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
+            envioAsync.start();
+        }
 
         return START_NOT_STICKY;
     }
@@ -328,7 +331,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 dataAccelerometer[iPosDataAccelerometer].setData(timeStamp, values);
                 double dModule = dataAccelerometer[iPosDataAccelerometer].calculateModule();
 
-                envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
+                if (bSendWifi)
+                    envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
                 /*SensorData dataPrueba = new SensorData();
                 float[] f = new float[]{0.0f, 0.0f, 1.0f};
 
@@ -339,17 +343,20 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 dataGiroscope[iPosDataGiroscope].setData(timeStamp, values);
-                envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGiroscope[iPosDataGiroscope].getBytes());
+                if (bSendWifi)
+                    envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGiroscope[iPosDataGiroscope].getBytes());
                 iPosDataGiroscope = (iPosDataGiroscope + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
                 dataMagnetometer[iPosDataMagnetometer].setData(timeStamp, values);
-                envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
+                if (bSendWifi)
+                    envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
                 iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_HEART_RATE:
                 dataHeartRate[iPosDataHeartRate].setData(timeStamp, values);
-                envioAsync.setData((byte) Sensor.TYPE_HEART_RATE, dataHeartRate[iPosDataHeartRate].getBytes());
+                if (bSendWifi)
+                    envioAsync.setData((byte) Sensor.TYPE_HEART_RATE, dataHeartRate[iPosDataHeartRate].getBytes());
                 iPosDataHeartRate = (iPosDataHeartRate + 1) % iTamBuffer;
                 break;
         }
@@ -383,7 +390,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         }
 
         try {
-            envioAsync.finalize();
+            if (bSendWifi)
+                envioAsync.finalize();
         }
         catch (Throwable throwable) {
             throwable.printStackTrace();

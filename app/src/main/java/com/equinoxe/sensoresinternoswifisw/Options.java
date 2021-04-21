@@ -14,7 +14,7 @@ import androidx.fragment.app.FragmentActivity;
 public class Options extends FragmentActivity {
     private TextView txtServer;
     private TextView txtPuerto;
-    private CheckBox checkBoxFastON;
+    private CheckBox checkBoxFastON, checkBoxWifi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,12 +24,14 @@ public class Options extends FragmentActivity {
         txtServer = findViewById(R.id.editTextServerIP);
         txtPuerto = findViewById(R.id.editTextPortNumber);
         checkBoxFastON = findViewById(R.id.checkBoxFastestON);
+        checkBoxWifi = findViewById(R.id.checkBoxWifi);
 
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
         txtServer.setText(pref.getString("server", "127.0.0.1"));
         String sCadena = "" + pref.getInt("puerto", 8000);
         txtPuerto.setText(sCadena);
         checkBoxFastON.setChecked(pref.getBoolean("FastON", false));
+        checkBoxWifi.setChecked(pref.getBoolean("Wifi", false));
     }
 
     public void onClickSaveSettings(View v) {
@@ -40,6 +42,7 @@ public class Options extends FragmentActivity {
                 editor.putString("server", txtServer.getText().toString());
                 editor.putInt("puerto", Integer.parseInt(txtPuerto.getText().toString()));
                 editor.putBoolean("FastON", checkBoxFastON.isChecked());
+                editor.putBoolean("Wifi", checkBoxWifi.isChecked());
                 editor.apply();
 
                 Toast.makeText(this, getResources().getText(R.string.Options_saved), Toast.LENGTH_SHORT).show();

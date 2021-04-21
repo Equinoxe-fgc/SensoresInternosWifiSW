@@ -64,7 +64,6 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
         bHR = extras.getBoolean("bHR", false);
 
         controller = AmbientModeSupport.attach(this);
-        //controller.setAmbientOffloadEnabled(true);
 
         ambientUpdateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
