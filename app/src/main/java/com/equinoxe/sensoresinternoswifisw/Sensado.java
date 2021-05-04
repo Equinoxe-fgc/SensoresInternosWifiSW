@@ -14,6 +14,8 @@ import android.widget.TextView;
 import androidx.fragment.app.FragmentActivity;
 import androidx.wear.ambient.AmbientModeSupport;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public class Sensado extends FragmentActivity implements AmbientModeSupport.AmbientCallbackProvider {
@@ -151,7 +153,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
 
     @Override
     public void onDestroy() {
-        ambientUpdateAlarmManager.cancel(ambientUpdatePendingIntent);
+        //ambientUpdateAlarmManager.cancel(ambientUpdatePendingIntent);
         super.onDestroy();
 
         unregisterReceiver(receiver);

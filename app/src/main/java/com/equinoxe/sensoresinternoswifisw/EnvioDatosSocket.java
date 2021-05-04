@@ -7,12 +7,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class EnvioDatosSocket extends Thread {
     private OutputStream outputStream = null;
-    private FileOutputStream fOut = null;
+    //private FileOutputStream fOut = null;
     private Socket socket = null;
     private SimpleDateFormat sdf;
     private byte []data;
@@ -21,7 +22,7 @@ public class EnvioDatosSocket extends Thread {
     private int iPuerto;
     private int iTamano;
     private String sCadena;
-    private boolean bConnectionState;
+    private boolean bConnected;
 
 
     public EnvioDatosSocket(String sServer, int iPuerto, int iTamano) {
@@ -31,13 +32,14 @@ public class EnvioDatosSocket extends Thread {
         data = new byte[iTamano];
 
         sdf = new SimpleDateFormat("yyyyMMdd_HHmmss");
-        try {
+        bConnected = false;
+        /*try {
             fOut = new FileOutputStream(Environment.getExternalStorageDirectory() + "/LOG_Envio.txt", true);
             sCadena = sdf.format(new Date()) + " - Inicio sesión\n";
             fOut.write(sCadena.getBytes());
         } catch (IOException e) {
             Log.d("EnvioDatosSocket.java", "Error en constructor");
-        }
+        }*/
     }
 
     public void setData(byte iDevice, byte []data) {
@@ -49,7 +51,11 @@ public class EnvioDatosSocket extends Thread {
         }
     }
 
-    private void finishSend() {
+    public void setBufferData (byte iDevice, SensorData []data, int iTamData) {
+
+    }
+
+    /*public void finishSend() {
         try {
             outputStream.close();
             socket.close();
@@ -59,82 +65,99 @@ public class EnvioDatosSocket extends Thread {
                         socket.close();
                 } catch (Exception ee) {}
         }
+    }*/
+
+    public boolean isConnected() {
+        return (socket != null && !socket.isClosed() && socket.isConnected());
     }
 
-    public boolean getConnectionState() {
-        return bConnectionState;
-    }
-
-    @Override
-    public void run() {
+    public void connect() {
         try {
             socket = new Socket(sServer, iPuerto);
             Log.d("EnvioDatosSocket.java", "Socket creado");
             outputStream = socket.getOutputStream();
             Log.d("EnvioDatosSocket.java", "Stream creado");
 
-            bConnectionState = true;
+            bConnected = true;
+        } catch (Exception e) {
+            Log.d("EnvioDatosSocket.java", "Error conectando: " + e.getMessage());
+        }
+    }
 
-            while (!socket.isClosed()) {
-                    synchronized (this) {
+    public void disconnect() {
+        try {
+            //fOut.close();
+            bConnected = false;
+            outputStream.flush();
+            outputStream.close();
+            socket.close();
+
+            socket = null;
+        } catch (Exception e) {
+            Log.d("EnvioDatosSocket.java", "Error desconectando: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void run() {
+        try {
+            while (true) {
+                    //synchronized (this) {
                         try {
                             if (bDataToSend) {
                                 //Log.d("EnvioDatosSocket.java", "Enviando datos");
-                                outputStream.write(data);
-                                bDataToSend = false;
+                                synchronized (this) {
+                                    outputStream.write(data);
+                                    bDataToSend = false;
+                                }
                             }
                         } catch (Exception e) {
-                            bConnectionState = false;
+                            bConnected = false;
 
-                            sCadena = sdf.format(new Date()) + " While Exception " + e.getMessage() + "\n";
-                            fOut.write(sCadena.getBytes());
+                            /*sCadena = sdf.format(new Date()) + " While Exception " + e.getMessage() + "\n";
+                            fOut.write(sCadena.getBytes());*/
                             Log.d("EnvioDatosSocket.java", "Excepcion: " + e.getMessage());
                             e.printStackTrace();
 
                             // Se cierran las conexiones
-                            finishSend();
+                            disconnect();
 
-                            sCadena = sdf.format(new Date()) + " - Reconexión\n";
-                            fOut.write(sCadena.getBytes());
+                            /*sCadena = sdf.format(new Date()) + " - Reconexión\n";
+                            fOut.write(sCadena.getBytes());*/
                             // Se vuelve a crear la conexión
-                            socket = new Socket(sServer, iPuerto);
-                            //Log.d("EnvioDatosSocket.java", "Socket creado de nuevo");
-                            outputStream = socket.getOutputStream();
-                            //Log.d("EnvioDatosSocket.java", "Stream creado de nuevo");
+                            connect();
 
-                            bConnectionState = true;
                         }
-                    }
+                    //}
             }
 
-            outputStream.close();
+            /*outputStream.close();
             fOut.close();
-            sCadena = sdf.format(new Date()) + " Socket cerrado\n";
+            sCadena = sdf.format(new Date()) + " Socket cerrado\n";*/
         } catch (Exception e) {
             Log.d("EnvioDatosSocket.java", "Excepcion externa: " + e.getMessage());
-            bConnectionState = false;
+            bConnected = false;
 
-            sCadena = sdf.format(new Date()) + " Error creación socket " + e.getMessage() + "\n";
+            /*sCadena = sdf.format(new Date()) + " Error creación socket " + e.getMessage() + "\n";
             try {
                 fOut.write(sCadena.getBytes());
-            } catch (IOException ee) {}
+            } catch (IOException ee) {}*/
             //Log.d("EnvioDatosSocket.java", "Error al crear socket o stream");
         }
 
-        try {
+        /*try {
             fOut.write(sCadena.getBytes());
             fOut.close();
-        } catch (Exception e) {}
+        } catch (Exception e) {}*/
     }
 
     @Override
     protected void finalize() throws Throwable {
         try {
-            fOut.close();
-            outputStream.close();
+            disconnect();
         } catch (Exception e) {}
 
-        finishSend();
+        //finishSend();
         super.finalize();
     }
 }

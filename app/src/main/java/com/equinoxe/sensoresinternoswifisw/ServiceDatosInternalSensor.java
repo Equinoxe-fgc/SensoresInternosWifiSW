@@ -24,6 +24,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -32,11 +33,15 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class ServiceDatosInternalSensor extends Service implements SensorEventListener {
-    private static int MUESTRAS_POR_SEGUNDO_GAME = 60;
-    private static int MUESTRAS_POR_SEGUNDO_FASTEST = 110;
-    private static int SEGUNDOS_VENTANA = 5;
+    private static final int MUESTRAS_POR_SEGUNDO_GAME = 60;
+    private static final int MUESTRAS_POR_SEGUNDO_FASTEST = 110;
+    //private static int SEGUNDOS_VENTANA = 5;
+    final static boolean SENSORS_ON = true;
+    final static boolean SENSORS_OFF = false;
 
-    private boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON, bSendWifi;
+    private boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON, bSendWifi, bThreshold;
+    int iWindowSize, iSendPeriod;
+    float fThreshold;
 
     private SensorManager sensorManager;
     private Sensor sensorAcelerometro, sensorGiroscopo, sensorMagnetometro, sensorHeartRate;
@@ -46,6 +51,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     private ServiceHandler mServiceHandler;
     Timer timerUpdateData;
     Timer timerGrabarDatos;
+    Timer timerSendBuffer;
+    Timer timerSendAcelerometro;
+    TimerTask timerTaskSendAcelerometro = null;
+
+    int iDataAccelerometroSent, iDataGiroscopoSent, iDataMagnetometroSent, iDataHeartRateSent;
+    boolean bSendAccelerometro, bSendGiroscopo, bSendMagnetometro, bSendHeartRate;
+    boolean bSendingData;
 
     DecimalFormat df;
 
@@ -65,7 +77,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     int iPosDataAccelerometer = 0;
     int iPosDataGiroscope = 0;
     int iPosDataMagnetometer = 0;
-    int iPosDataHeartRate;
+    int iPosDataHeartRate = 0;
 
     String sServer;
     int iPort;
@@ -136,27 +148,15 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         iPort = pref.getInt("puerto", 8000);
         bFastestON = pref.getBoolean("FastON", false);
         bSendWifi = pref.getBoolean("Wifi", false);
+        iWindowSize = pref.getInt("WindowSize", 3000);
+        iSendPeriod = pref.getInt("SendPeriod", 600);
 
-        int iSensorDelay = (bFastestON)?SensorManager.SENSOR_DELAY_FASTEST:SensorManager.SENSOR_DELAY_GAME;
+        bThreshold = pref.getBoolean("Threshold_ONOFF", false);
+        fThreshold = pref.getFloat("Threshold", 2.5f);
 
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        if (bAcelerometro) {
-            sensorAcelerometro = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            sensorManager.registerListener(this, sensorAcelerometro, iSensorDelay);
-        }
-        if (bGiroscopo) {
-            sensorGiroscopo = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-            sensorManager.registerListener(this, sensorGiroscopo, iSensorDelay);
-        }
-        if (bMagnetometro) {
-            sensorMagnetometro = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-            sensorManager.registerListener(this, sensorMagnetometro, iSensorDelay);
-        }
-        if (bHeartRate) {
-            sensorHeartRate = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
-            sensorManager.registerListener(this, sensorHeartRate, iSensorDelay);
-        }
+        final int iSensorDelay = (bFastestON)?SensorManager.SENSOR_DELAY_FASTEST:SensorManager.SENSOR_DELAY_GAME;
 
+        controlSensors(SENSORS_ON, iSensorDelay);
 
             sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
 
@@ -227,7 +227,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         timerUpdateData = new Timer();
         timerUpdateData.scheduleAtFixedRate(timerTaskUpdateData, Sensado.AMBIENT_INTERVAL_MS / 2, Sensado.AMBIENT_INTERVAL_MS);
 
-        iTamBuffer = (bFastestON)?(MUESTRAS_POR_SEGUNDO_FASTEST*SEGUNDOS_VENTANA):(MUESTRAS_POR_SEGUNDO_GAME*SEGUNDOS_VENTANA);
+        iTamBuffer = (bFastestON)?(MUESTRAS_POR_SEGUNDO_FASTEST*iWindowSize/1000):(MUESTRAS_POR_SEGUNDO_GAME*iWindowSize/1000);
         if (bAcelerometro)
             dataAccelerometer = new SensorData[iTamBuffer];
         if (bGiroscopo)
@@ -255,9 +255,138 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         if (bSendWifi) {
             envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
             envioAsync.start();
+
+            if (iSendPeriod == 0) {
+                envioAsync.connect();
+            }
         }
 
+        final TimerTask timerTaskSendBuffer = new TimerTask() {
+            @Override
+            public void run() {
+                controlSensors(SENSORS_OFF, 0);
+                enviarBuffer();
+            }
+        };
+
+        if (bSendWifi && iSendPeriod != 0) {
+            timerSendBuffer = new Timer();
+            timerSendBuffer.scheduleAtFixedRate(timerTaskSendBuffer, iSendPeriod * 1000, iSendPeriod * 1000);
+        }
+
+
+        timerTaskSendAcelerometro = new TimerTask() {
+            @Override
+            public void run() {
+                if (!bSendingData)
+                    return;
+
+                if (bSendAccelerometro) {
+                    envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
+                    iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
+                    iDataAccelerometroSent++;
+
+                    if (iDataAccelerometroSent == iTamBuffer) {
+                        bSendAccelerometro = false;
+                    }
+                } else if (bSendGiroscopo) {
+                    envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGiroscope[iPosDataGiroscope].getBytes());
+                    iPosDataGiroscope = (iPosDataGiroscope + 1) % iTamBuffer;
+                    iDataGiroscopoSent++;
+
+                    if (iDataGiroscopoSent == iTamBuffer) {
+                        bSendGiroscopo = false;
+                    }
+                } else if (bSendMagnetometro) {
+                    envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
+                    iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
+                    iDataMagnetometroSent++;
+
+                    if (iDataMagnetometroSent == iTamBuffer) {
+                        bSendMagnetometro = false;
+                    }
+                } else if (bSendHeartRate) {
+                    envioAsync.setData((byte) Sensor.TYPE_HEART_RATE, dataHeartRate[iPosDataHeartRate].getBytes());
+                    iPosDataHeartRate = (iPosDataHeartRate + 1) % iTamBuffer;
+                    iDataHeartRateSent++;
+
+                    if (iDataHeartRateSent == iTamBuffer) {
+                        bSendHeartRate = false;
+                    }
+                }
+
+                if (bSendingData && !bSendAccelerometro && !bSendGiroscopo && !bSendMagnetometro && !bSendHeartRate) {
+                    bSendingData = false;
+                    envioAsync.disconnect();
+                    controlSensors(SENSORS_ON, iSensorDelay);
+                }
+            }
+        };
+
+        bSendAccelerometro = false;
+        bSendGiroscopo = false;
+        bSendMagnetometro = false;
+        bSendHeartRate = false;
+        bSendingData = false;
+
+        timerSendAcelerometro = new Timer();
+        timerSendAcelerometro.scheduleAtFixedRate(timerTaskSendAcelerometro, 1, 20);
+
         return START_NOT_STICKY;
+    }
+
+    private void enviarBuffer() {
+        envioAsync.connect();
+
+        if (bAcelerometro) {
+            iDataAccelerometroSent = 0;
+            bSendAccelerometro = true;
+        }
+        if (bGiroscopo) {
+            iDataGiroscopoSent = 0;
+            bSendGiroscopo = true;
+        }
+        if (bMagnetometro) {
+            iDataMagnetometroSent = 0;
+            bSendMagnetometro = true;
+        }
+        if (bHeartRate) {
+            iDataHeartRateSent = 0;
+            bSendHeartRate = true;
+        }
+        bSendingData = true;
+    }
+
+    private void controlSensors(boolean bSensors_ON, int iSensorDelay) {
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+        if (bAcelerometro) {
+            sensorAcelerometro = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            if (bSensors_ON)
+                sensorManager.registerListener(this, sensorAcelerometro, iSensorDelay);
+            else
+                sensorManager.unregisterListener(this, sensorAcelerometro);
+        }
+        if (bGiroscopo) {
+            sensorGiroscopo = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            if (bSensors_ON)
+                sensorManager.registerListener(this, sensorGiroscopo, iSensorDelay);
+            else
+                sensorManager.unregisterListener(this, sensorGiroscopo);
+        }
+        if (bMagnetometro) {
+            sensorMagnetometro = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+            if (bSensors_ON)
+                sensorManager.registerListener(this, sensorMagnetometro, iSensorDelay);
+            else
+                sensorManager.unregisterListener(this, sensorMagnetometro);
+        }
+        if (bHeartRate) {
+            sensorHeartRate = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
+            if (bSensors_ON)
+                sensorManager.registerListener(this, sensorHeartRate, iSensorDelay);
+            else
+                sensorManager.unregisterListener(this, sensorHeartRate);
+        }
     }
 
     public void grabarMedidas() {
@@ -331,7 +460,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 dataAccelerometer[iPosDataAccelerometer].setData(timeStamp, values);
                 double dModule = dataAccelerometer[iPosDataAccelerometer].calculateModule();
 
-                if (bSendWifi)
+                if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
                 /*SensorData dataPrueba = new SensorData();
                 float[] f = new float[]{0.0f, 0.0f, 1.0f};
@@ -343,19 +472,19 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 dataGiroscope[iPosDataGiroscope].setData(timeStamp, values);
-                if (bSendWifi)
+                if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGiroscope[iPosDataGiroscope].getBytes());
                 iPosDataGiroscope = (iPosDataGiroscope + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
                 dataMagnetometer[iPosDataMagnetometer].setData(timeStamp, values);
-                if (bSendWifi)
+                if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
                 iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_HEART_RATE:
                 dataHeartRate[iPosDataHeartRate].setData(timeStamp, values);
-                if (bSendWifi)
+                if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_HEART_RATE, dataHeartRate[iPosDataHeartRate].getBytes());
                 iPosDataHeartRate = (iPosDataHeartRate + 1) % iTamBuffer;
                 break;
@@ -380,35 +509,28 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     public void onDestroy() {
         super.onDestroy();
 
+        controlSensors(SENSORS_OFF, 0);
+
+        timerUpdateData.cancel();
+        timerGrabarDatos.cancel();
         try {
-            timerUpdateData.cancel();
-            timerGrabarDatos.cancel();
+            timerSendBuffer.cancel();
+        } catch (NullPointerException e) {}
+
+        try {
             grabarMedidas();
             fOut.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
         try {
-            if (bSendWifi)
+            if (bSendWifi && iSendPeriod == 0)
+                envioAsync.disconnect();
                 envioAsync.finalize();
         }
         catch (Throwable throwable) {
             throwable.printStackTrace();
-        }
-
-
-        if (bAcelerometro) {
-            sensorManager.unregisterListener(this, sensorAcelerometro);
-        }
-        if (bGiroscopo) {
-            sensorManager.unregisterListener(this, sensorGiroscopo);
-        }
-        if (bMagnetometro) {
-            sensorManager.unregisterListener(this, sensorMagnetometro);
-        }
-        if (bHeartRate) {
-            sensorManager.unregisterListener(this, sensorHeartRate);
         }
 
         wakeLock.release();

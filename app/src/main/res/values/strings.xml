@@ -4,7 +4,7 @@
     This string is used for square devices and overridden by hello_world in
     values-round/strings.xml for round devices.
     -->
-    <string name="ReleaseDate">20/04/2021</string>
+    <string name="ReleaseDate">04/05/2021</string>
 
     <string name="ERROR_FICHERO">Error opening file</string>
     <string name="title_activity_sensado">Sensado</string>
@@ -33,4 +33,8 @@
     <string name="Incorrect_IP">Incorrect IP</string>
     <string name="Incorrect_Port">Incorrect port</string>
     <string name="Wifi">Send data (Wifi)</string>
+    <string name="Data_Window">Data window (ms):</string>
+    <string name="Send_Period">Send period (s):</string>
+    <string name="Options_Error">Number formar error</string>
+    <string name="Threshold">Threshold</string>
 </resources>
