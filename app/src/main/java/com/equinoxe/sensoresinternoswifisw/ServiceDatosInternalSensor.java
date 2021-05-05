@@ -35,13 +35,12 @@ import java.util.TimerTask;
 public class ServiceDatosInternalSensor extends Service implements SensorEventListener {
     private static final int MUESTRAS_POR_SEGUNDO_GAME = 60;
     private static final int MUESTRAS_POR_SEGUNDO_FASTEST = 110;
-    //private static int SEGUNDOS_VENTANA = 5;
-    final static boolean SENSORS_ON = true;
-    final static boolean SENSORS_OFF = false;
+    private final static boolean SENSORS_ON = true;
+    private final static boolean SENSORS_OFF = false;
 
-    private boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON, bSendWifi, bThreshold;
+    boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON, bSendWifi, bThreshold;
     int iWindowSize, iSendPeriod;
-    float fThreshold;
+    String sThresholds;
 
     private SensorManager sensorManager;
     private Sensor sensorAcelerometro, sensorGiroscopo, sensorMagnetometro, sensorHeartRate;
@@ -78,6 +77,11 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     int iPosDataGiroscope = 0;
     int iPosDataMagnetometer = 0;
     int iPosDataHeartRate = 0;
+
+    boolean bCaidaDetectada;
+    int iMuestrasDesdeCaidaDetectada;
+    int []iNumUmbralesDetectados;
+    float []fUmbrales;
 
     String sServer;
     int iPort;
@@ -152,7 +156,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         iSendPeriod = pref.getInt("SendPeriod", 600);
 
         bThreshold = pref.getBoolean("Threshold_ONOFF", false);
-        fThreshold = pref.getFloat("Threshold", 2.5f);
+        //fThreshold = pref.getFloat("Threshold", 2.5f);
+        sThresholds = pref.getString("Thresholds", "2");
+        procesaThresholds(sThresholds);
 
         final int iSensorDelay = (bFastestON)?SensorManager.SENSOR_DELAY_FASTEST:SensorManager.SENSOR_DELAY_GAME;
 
@@ -176,7 +182,12 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 String sModel = Build.MODEL;
                 sModel = sModel.replace(" ", "_");
                 String sCadena = sModel + " " +
-                                 bAcelerometro + " " + bGiroscopo + " " + bMagnetometro + " " + bHeartRate + " " + bFastestON + " " + currentDateandTime + "\n";
+                                 bAcelerometro + " " + bGiroscopo + " " + bMagnetometro + " " + bHeartRate + " " +
+                                 bFastestON + " " + bSendWifi + " " + bThreshold;
+                if (bThreshold) {
+                    sCadena += "(" + sThresholds + ")";
+                }
+                sCadena += " " + currentDateandTime + "\n";
                 fOut.write(sCadena.getBytes());
                 fOut.flush();
             } catch (Exception e) {
@@ -265,7 +276,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             @Override
             public void run() {
                 controlSensors(SENSORS_OFF, 0);
-                enviarBuffer();
+                enviarBuffers();
             }
         };
 
@@ -329,13 +340,28 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         bSendHeartRate = false;
         bSendingData = false;
 
+        bCaidaDetectada = false;
+
         timerSendAcelerometro = new Timer();
         timerSendAcelerometro.scheduleAtFixedRate(timerTaskSendAcelerometro, 1, 20);
 
         return START_NOT_STICKY;
     }
 
-    private void enviarBuffer() {
+    private void procesaThresholds(String sThresholds) {
+        String []sUmbrales = sThresholds.split(" ");
+
+        iNumUmbralesDetectados = new int[sUmbrales.length];
+        for (int i = 0; i < sUmbrales.length; i++)
+            iNumUmbralesDetectados[i] = 0;
+
+        fUmbrales = new float[sUmbrales.length];
+        for (int i = 0; i < sUmbrales.length; i++) {
+            fUmbrales[i] = Float.parseFloat(sUmbrales[i]);
+        }
+    }
+
+    private void enviarBuffers() {
         envioAsync.connect();
 
         if (bAcelerometro) {
@@ -399,14 +425,26 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             fOut.write(sCadena.getBytes());
 
             long lNumMsg = lNumMsgGiroscopo + lNumMsgMagnetometro + lNumMsgAcelerometro + lNumMsgHR;
-            sCadena = "(" + lNumMsg + ",0)";
 
-            sCadena += "(" + lNumMsgAcelerometro + ",0)";
-            sCadena += "(" + lNumMsgGiroscopo + ",0)";
-            sCadena += "(" + lNumMsgMagnetometro + ",0)";
-            sCadena += "(" + lNumMsgHR + ",0)";
+            sCadena += "(" + lNumMsgAcelerometro + ")";
+            sCadena += "(" + lNumMsgGiroscopo + ")";
+            sCadena += "(" + lNumMsgMagnetometro + ")";
+            sCadena += "(" + lNumMsgHR + ")";
 
-            sCadena += "(" + lNumMsg + ",0)\n";
+            sCadena += "(" + lNumMsg + ")";
+
+            if (bThreshold) {
+                sCadena += "(";
+                for (int i = 0; i < iNumUmbralesDetectados.length; i++) {
+                    if (i < iNumUmbralesDetectados.length - 1)
+                        sCadena += iNumUmbralesDetectados[i] + ",";
+                    else
+                        sCadena += iNumUmbralesDetectados[i] + ")";
+                }
+            }
+
+            sCadena += "\n";
+
             fOut.write(sCadena.getBytes());
             fOut.flush();
         } catch (Exception e) {
@@ -454,19 +492,46 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         }
     }
 
+    // Devuelve -1 si no se sobrepasa ningún umbral, en otro caso se devuelve la posición del umbral dentro
+    // del array de umbrales
+    private int detectaUmbral(double dModule) {
+        int iDetectado;
+
+        for (iDetectado = fUmbrales.length - 1; iDetectado >= 0; iDetectado--) {
+            if (dModule > fUmbrales[iDetectado])
+                break;
+        }
+
+        return iDetectado;
+    }
+
     private void procesarDatosSensados(int iSensor, long timeStamp, float []values) {
         switch (iSensor) {
             case Sensor.TYPE_ACCELEROMETER:
                 dataAccelerometer[iPosDataAccelerometer].setData(timeStamp, values);
-                double dModule = dataAccelerometer[iPosDataAccelerometer].calculateModule();
+
+                if (bThreshold) {
+                    double dModule = dataAccelerometer[iPosDataAccelerometer].calculateModuleGravity();
+                    int iUmbralDetectado = detectaUmbral(dModule);
+                    if (!bCaidaDetectada && iUmbralDetectado != -1) {
+                        bCaidaDetectada = true;
+                        iNumUmbralesDetectados[iUmbralDetectado]++;
+                        iMuestrasDesdeCaidaDetectada = -1;  // Es -1 porque la primera vez se le suma 1 más adelante
+                    }
+                    if (bCaidaDetectada) {
+                        iMuestrasDesdeCaidaDetectada++;
+                        if (iMuestrasDesdeCaidaDetectada == iTamBuffer / 2) {
+                            if (bSendWifi) {
+                                controlSensors(SENSORS_OFF, 0);
+                                enviarBuffers();
+                            }
+                            bCaidaDetectada = false;
+                        }
+                    }
+                }
 
                 if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
-                /*SensorData dataPrueba = new SensorData();
-                float[] f = new float[]{0.0f, 0.0f, 1.0f};
-
-                dataPrueba.setData(timeStamp, f);
-                envioAsync.setData((byte) 1, dataPrueba.getBytes());*/
 
                 iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
                 break;

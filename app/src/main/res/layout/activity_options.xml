@@ -18,42 +18,6 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/textView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/ServerIP"
-                android:textAlignment="center" />
-
-            <EditText
-                android:id="@+id/editTextServerIP"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ems="10"
-                android:inputType="textPersonName"
-                android:textAlignment="center"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/textView2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/Port"
-                android:textAlignment="center" />
-
-            <EditText
-                android:id="@+id/editTextPortNumber"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:ems="10"
-                android:inputType="phone"
-                android:textAlignment="center"
-                android:textSize="14sp" />
-
             <CheckBox
                 android:id="@+id/checkBoxWifi"
                 android:layout_width="wrap_content"
@@ -61,7 +25,52 @@
                 android:layout_weight="1"
                 android:checked="false"
                 android:text="@string/Wifi"
-                android:translationX="40dp" />
+                android:translationX="40dp"
+                android:translationY="10dp" />
+
+            <LinearLayout
+                android:id="@+id/layoutServerData"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/textView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/ServerIP"
+                    android:textAlignment="center" />
+
+                <EditText
+                    android:id="@+id/editTextServerIP"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ems="10"
+                    android:inputType="textPersonName"
+                    android:textAlignment="center"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/textView2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/Port"
+                    android:textAlignment="center" />
+
+                <EditText
+                    android:id="@+id/editTextPortNumber"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ems="10"
+                    android:inputType="phone"
+                    android:textAlignment="center"
+                    android:textSize="14sp" />
+            </LinearLayout>
 
             <CheckBox
                 android:id="@+id/checkBoxThreshold"
@@ -106,7 +115,8 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/Threshold" />
+                    android:text="@string/Threshold"
+                    android:translationX="40dp" />
 
                 <EditText
                     android:id="@+id/editTextThreshold"

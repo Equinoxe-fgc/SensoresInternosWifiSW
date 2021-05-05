@@ -17,7 +17,7 @@ public class Options extends FragmentActivity {
     private TextView txtPuerto;
     private CheckBox checkBoxFastON, checkBoxWifi, checkThreshold;
     private TextView txtWindowSize, txtSendPeriod, txtThreshold;
-    private LinearLayout layoutWindowSize, layoutSendPeriod, layoutThreshold;
+    private LinearLayout layoutWindowSize, layoutSendPeriod, layoutThreshold, layoutServerData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +36,7 @@ public class Options extends FragmentActivity {
         layoutWindowSize = findViewById(R.id.layoutWindow);
         layoutSendPeriod = findViewById(R.id.layoutPeriod);
         layoutThreshold = findViewById(R.id.layoutThreshold);
+        layoutServerData = findViewById(R.id.layoutServerData);
 
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
         txtServer.setText(pref.getString("server", "127.0.0.1"));
@@ -50,19 +51,14 @@ public class Options extends FragmentActivity {
         txtSendPeriod.setText(sCadena);
 
         checkThreshold.setChecked(pref.getBoolean("Threshold_ONOFF", false));
-        txtThreshold.setText(Float.toString(pref.getFloat("Threshold", 2.5f)));
+        txtThreshold.setText(Float.toString(pref.getFloat("Threshold", 2.0f)));
 
         if (checkBoxWifi.isChecked()) {
-            layoutWindowSize.setVisibility(View.VISIBLE);
             layoutSendPeriod.setVisibility(View.VISIBLE);
-            //layoutThreshold.setVisibility(View.VISIBLE);
-            checkThreshold.setVisibility(View.VISIBLE);
+            layoutServerData.setVisibility(View.VISIBLE);
         } else {
-            layoutWindowSize.setVisibility(View.GONE);
             layoutSendPeriod.setVisibility(View.GONE);
-            layoutThreshold.setVisibility(View.GONE);
-            checkThreshold.setVisibility(View.GONE);
-            checkThreshold.setChecked(false);
+            layoutServerData.setVisibility(View.GONE);
         }
 
         if (checkThreshold.isChecked()) {
@@ -76,17 +72,12 @@ public class Options extends FragmentActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    layoutWindowSize.setVisibility(View.VISIBLE);
-                    layoutSendPeriod.setVisibility(View.VISIBLE);
-                    //layoutThreshold.setVisibility(View.VISIBLE);
-                    checkThreshold.setVisibility(View.VISIBLE);
+                    layoutServerData.setVisibility(View.VISIBLE);
+                    if (!checkThreshold.isChecked())
+                        layoutSendPeriod.setVisibility(View.VISIBLE);
                 } else {
-                    checkThreshold.setChecked(false);
-
-                    layoutWindowSize.setVisibility(View.GONE);
                     layoutSendPeriod.setVisibility(View.GONE);
-                    layoutThreshold.setVisibility(View.GONE);
-                    checkThreshold.setVisibility(View.GONE);
+                    layoutServerData.setVisibility(View.GONE);
                 }
             }
         });
@@ -99,7 +90,8 @@ public class Options extends FragmentActivity {
                     layoutSendPeriod.setVisibility(View.GONE);
                 } else {
                     layoutThreshold.setVisibility(View.GONE);
-                    layoutSendPeriod.setVisibility(View.VISIBLE);
+                    if (checkBoxWifi.isChecked())
+                        layoutSendPeriod.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -118,7 +110,8 @@ public class Options extends FragmentActivity {
                 try {
                     editor.putInt("WindowSize", Integer.parseInt(txtWindowSize.getText().toString()));
                     editor.putInt("SendPeriod", Integer.parseInt(txtSendPeriod.getText().toString()));
-                    editor.putFloat("Threshold", Float.parseFloat(txtThreshold.getText().toString()));
+                    //editor.putFloat("Threshold", Float.parseFloat(txtThreshold.getText().toString()));
+                    editor.putString("Thresholds", txtThreshold.getText().toString());
                     editor.apply();
 
                     Toast.makeText(this, getResources().getText(R.string.Options_saved), Toast.LENGTH_SHORT).show();

@@ -41,6 +41,15 @@ public class SensorData {
     }
 
 
+    public double calculateModuleGravity() {
+        double v1G = v1 / 9.8;
+        double v2G = v2 / 9.8;
+        double v3G = v3 / 9.8;
+        dModule = Math.sqrt(v1G*v1G + v2G*v2G + v3G*v3G);
+
+        return dModule;
+    }
+
     public double calculateModule() {
         dModule = Math.sqrt(v1*v1 + v2*v2 + v3*v3);
 
