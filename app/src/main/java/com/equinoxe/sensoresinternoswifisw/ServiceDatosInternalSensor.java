@@ -19,6 +19,8 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -41,6 +43,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON, bSendWifi, bThreshold;
     int iWindowSize, iSendPeriod;
     String sThresholds;
+    boolean bVibrate;
 
     private SensorManager sensorManager;
     private Sensor sensorAcelerometro, sensorGiroscopo, sensorMagnetometro, sensorHeartRate;
@@ -159,6 +162,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         //fThreshold = pref.getFloat("Threshold", 2.5f);
         sThresholds = pref.getString("Thresholds", "2");
         procesaThresholds(sThresholds);
+        bVibrate = pref.getBoolean("Vibrate", false);
 
         final int iSensorDelay = (bFastestON)?SensorManager.SENSOR_DELAY_FASTEST:SensorManager.SENSOR_DELAY_GAME;
 
@@ -505,6 +509,11 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         return iDetectado;
     }
 
+    private void vibrate(int iUmbralDetectado) {
+        Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        v.vibrate(VibrationEffect.createOneShot(250 + 250*iUmbralDetectado, VibrationEffect.DEFAULT_AMPLITUDE));
+    }
+
     private void procesarDatosSensados(int iSensor, long timeStamp, float []values) {
         switch (iSensor) {
             case Sensor.TYPE_ACCELEROMETER:
@@ -517,6 +526,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                         bCaidaDetectada = true;
                         iNumUmbralesDetectados[iUmbralDetectado]++;
                         iMuestrasDesdeCaidaDetectada = -1;  // Es -1 porque la primera vez se le suma 1 más adelante
+
+                        if (bVibrate)
+                            vibrate(iUmbralDetectado);
                     }
                     if (bCaidaDetectada) {
                         iMuestrasDesdeCaidaDetectada++;

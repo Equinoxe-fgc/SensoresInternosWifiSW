@@ -31,7 +31,7 @@
                 android:id="@+id/buttonStart"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:enabled="false"
+                android:enabled="true"
                 android:onClick="onClickStartSending"
                 android:text="@string/StartSensing"
                 android:translationX="20dp" />
@@ -50,6 +50,7 @@
             android:id="@+id/checkBoxAccelerometer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:checked="true"
             android:enabled="false"
             android:text="@string/Accelerometer"
             android:translationX="40dp" />

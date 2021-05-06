@@ -15,7 +15,7 @@ import androidx.fragment.app.FragmentActivity;
 public class Options extends FragmentActivity {
     private TextView txtServer;
     private TextView txtPuerto;
-    private CheckBox checkBoxFastON, checkBoxWifi, checkThreshold;
+    private CheckBox checkBoxFastON, checkBoxWifi, checkThreshold, checkVibrate;
     private TextView txtWindowSize, txtSendPeriod, txtThreshold;
     private LinearLayout layoutWindowSize, layoutSendPeriod, layoutThreshold, layoutServerData;
 
@@ -32,6 +32,7 @@ public class Options extends FragmentActivity {
         txtSendPeriod = findViewById(R.id.editTextSendPeriod);
         txtThreshold = findViewById(R.id.editTextThreshold);
         checkThreshold = findViewById(R.id.checkBoxThreshold);
+        checkVibrate = findViewById(R.id.checkBoxVibrate);
 
         layoutWindowSize = findViewById(R.id.layoutWindow);
         layoutSendPeriod = findViewById(R.id.layoutPeriod);
@@ -51,7 +52,8 @@ public class Options extends FragmentActivity {
         txtSendPeriod.setText(sCadena);
 
         checkThreshold.setChecked(pref.getBoolean("Threshold_ONOFF", false));
-        txtThreshold.setText(Float.toString(pref.getFloat("Threshold", 2.0f)));
+        txtThreshold.setText(pref.getString("Thresholds", "2.0"));
+        checkVibrate.setChecked(pref.getBoolean("Vibrate", false));
 
         if (checkBoxWifi.isChecked()) {
             layoutSendPeriod.setVisibility(View.VISIBLE);
@@ -102,24 +104,22 @@ public class Options extends FragmentActivity {
             case 0:
                 SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
                 SharedPreferences.Editor editor = pref.edit();
+
                 editor.putString("server", txtServer.getText().toString());
                 editor.putInt("puerto", Integer.parseInt(txtPuerto.getText().toString()));
                 editor.putBoolean("FastON", checkBoxFastON.isChecked());
                 editor.putBoolean("Wifi", checkBoxWifi.isChecked());
                 editor.putBoolean("Threshold_ONOFF", checkThreshold.isChecked());
-                try {
-                    editor.putInt("WindowSize", Integer.parseInt(txtWindowSize.getText().toString()));
-                    editor.putInt("SendPeriod", Integer.parseInt(txtSendPeriod.getText().toString()));
-                    //editor.putFloat("Threshold", Float.parseFloat(txtThreshold.getText().toString()));
-                    editor.putString("Thresholds", txtThreshold.getText().toString());
-                    editor.apply();
 
-                    Toast.makeText(this, getResources().getText(R.string.Options_saved), Toast.LENGTH_SHORT).show();
+                editor.putInt("WindowSize", Integer.parseInt(txtWindowSize.getText().toString()));
+                editor.putInt("SendPeriod", Integer.parseInt(txtSendPeriod.getText().toString()));
+                editor.putString("Thresholds", txtThreshold.getText().toString());
+                editor.putBoolean("Vibrate", checkVibrate.isChecked());
+                editor.apply();
 
-                    finish();
-                } catch (NumberFormatException e) {
-                    Toast.makeText(this, getResources().getText(R.string.Options_Error), Toast.LENGTH_SHORT).show();
-                }
+                Toast.makeText(this, getResources().getText(R.string.Options_saved), Toast.LENGTH_SHORT).show();
+
+                finish();
                 break;
             case 1:
                 Toast.makeText(this, getResources().getText(R.string.Incorrect_IP), Toast.LENGTH_SHORT).show();
