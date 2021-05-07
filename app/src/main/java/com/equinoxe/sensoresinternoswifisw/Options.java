@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,9 +14,9 @@ import androidx.fragment.app.FragmentActivity;
 public class Options extends FragmentActivity {
     private TextView txtServer;
     private TextView txtPuerto;
-    private CheckBox checkBoxFastON, checkBoxWifi, checkThreshold, checkVibrate;
+    private CheckBox checkBoxFastON, checkBoxWifi, checkThreshold, checkVibrate, checkSaveSensedData;
     private TextView txtWindowSize, txtSendPeriod, txtThreshold;
-    private LinearLayout layoutWindowSize, layoutSendPeriod, layoutThreshold, layoutServerData;
+    private LinearLayout layoutSendPeriod, layoutThreshold, layoutServerData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,8 +32,9 @@ public class Options extends FragmentActivity {
         txtThreshold = findViewById(R.id.editTextThreshold);
         checkThreshold = findViewById(R.id.checkBoxThreshold);
         checkVibrate = findViewById(R.id.checkBoxVibrate);
+        checkSaveSensedData = findViewById(R.id.checkBoxSaveSensedData);
 
-        layoutWindowSize = findViewById(R.id.layoutWindow);
+        //layoutWindowSize = findViewById(R.id.layoutWindow);
         layoutSendPeriod = findViewById(R.id.layoutPeriod);
         layoutThreshold = findViewById(R.id.layoutThreshold);
         layoutServerData = findViewById(R.id.layoutServerData);
@@ -55,6 +55,8 @@ public class Options extends FragmentActivity {
         txtThreshold.setText(pref.getString("Thresholds", "2.0"));
         checkVibrate.setChecked(pref.getBoolean("Vibrate", false));
 
+        checkSaveSensedData.setChecked(pref.getBoolean("SaveSensedData", false));
+
         if (checkBoxWifi.isChecked()) {
             layoutSendPeriod.setVisibility(View.VISIBLE);
             layoutServerData.setVisibility(View.VISIBLE);
@@ -70,31 +72,25 @@ public class Options extends FragmentActivity {
             layoutThreshold.setVisibility(View.GONE);
         }
 
-        checkBoxWifi.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    layoutServerData.setVisibility(View.VISIBLE);
-                    if (!checkThreshold.isChecked())
-                        layoutSendPeriod.setVisibility(View.VISIBLE);
-                } else {
-                    layoutSendPeriod.setVisibility(View.GONE);
-                    layoutServerData.setVisibility(View.GONE);
-                }
+        checkBoxWifi.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                layoutServerData.setVisibility(View.VISIBLE);
+                if (!checkThreshold.isChecked())
+                    layoutSendPeriod.setVisibility(View.VISIBLE);
+            } else {
+                layoutSendPeriod.setVisibility(View.GONE);
+                layoutServerData.setVisibility(View.GONE);
             }
         });
 
-        checkThreshold.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    layoutThreshold.setVisibility(View.VISIBLE);
-                    layoutSendPeriod.setVisibility(View.GONE);
-                } else {
-                    layoutThreshold.setVisibility(View.GONE);
-                    if (checkBoxWifi.isChecked())
-                        layoutSendPeriod.setVisibility(View.VISIBLE);
-                }
+        checkThreshold.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                layoutThreshold.setVisibility(View.VISIBLE);
+                layoutSendPeriod.setVisibility(View.GONE);
+            } else {
+                layoutThreshold.setVisibility(View.GONE);
+                if (checkBoxWifi.isChecked())
+                    layoutSendPeriod.setVisibility(View.VISIBLE);
             }
         });
     }
@@ -115,6 +111,7 @@ public class Options extends FragmentActivity {
                 editor.putInt("SendPeriod", Integer.parseInt(txtSendPeriod.getText().toString()));
                 editor.putString("Thresholds", txtThreshold.getText().toString());
                 editor.putBoolean("Vibrate", checkVibrate.isChecked());
+                editor.putBoolean("SaveSensedData", checkSaveSensedData.isChecked());
                 editor.apply();
 
                 Toast.makeText(this, getResources().getText(R.string.Options_saved), Toast.LENGTH_SHORT).show();

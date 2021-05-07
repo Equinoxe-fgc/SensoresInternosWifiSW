@@ -24,9 +24,11 @@ import android.os.Vibrator;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -46,10 +48,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     boolean bVibrate;
 
     private SensorManager sensorManager;
-    private Sensor sensorAcelerometro, sensorGiroscopo, sensorMagnetometro, sensorHeartRate;
 
     String sCadenaGiroscopo, sCadenaMagnetometro, sCadenaAcelerometro, sCadenaHeartRate;
-    private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
     Timer timerUpdateData;
     Timer timerGrabarDatos;
@@ -60,11 +60,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     int iDataAccelerometroSent, iDataGiroscopoSent, iDataMagnetometroSent, iDataHeartRateSent;
     boolean bSendAccelerometro, bSendGiroscopo, bSendMagnetometro, bSendHeartRate;
     boolean bSendingData;
+    boolean bSaveSensedData;
 
     DecimalFormat df;
 
     SimpleDateFormat sdf;
     FileOutputStream fOut;
+    OutputStream fDataAcelerometro, fDataGiroscopo, fDataMagnetometro, fDataHR;
 
     long lNumMsgGiroscopo, lNumMsgMagnetometro, lNumMsgAcelerometro, lNumMsgHR;
 
@@ -96,8 +98,10 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         thread.start();
 
         // Get the HandlerThread's Looper and use it for our Handler
-        mServiceLooper = thread.getLooper();
+        Looper mServiceLooper = thread.getLooper();
         mServiceHandler = new com.equinoxe.sensoresinternoswifisw.ServiceDatosInternalSensor.ServiceHandler(mServiceLooper);
+
+        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
     }
 
     // Handler that receives messages from the thread
@@ -163,49 +167,26 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         sThresholds = pref.getString("Thresholds", "2");
         procesaThresholds(sThresholds);
         bVibrate = pref.getBoolean("Vibrate", false);
+        bSaveSensedData = pref.getBoolean("SaveSensedData", false);
 
         final int iSensorDelay = (bFastestON)?SensorManager.SENSOR_DELAY_FASTEST:SensorManager.SENSOR_DELAY_GAME;
 
         controlSensors(SENSORS_ON, iSensorDelay);
 
-            sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
+        sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
 
-            File file;
-            int iNumFichero = 0;
-            String sFichero;
-            do {
-                sFichero = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  iNumFichero + "_Interno.txt";
-                file = new File(sFichero);
-                iNumFichero++;
-            } while (file.exists());
+        createLogFile();
+        if (bSaveSensedData)
+            createSensedDataFiles();
 
-            try {
-                String currentDateandTime = sdf.format(new Date());
-
-                fOut = new FileOutputStream(sFichero, false);
-                String sModel = Build.MODEL;
-                sModel = sModel.replace(" ", "_");
-                String sCadena = sModel + " " +
-                                 bAcelerometro + " " + bGiroscopo + " " + bMagnetometro + " " + bHeartRate + " " +
-                                 bFastestON + " " + bSendWifi + " " + bThreshold;
-                if (bThreshold) {
-                    sCadena += "(" + sThresholds + ")";
-                }
-                sCadena += " " + currentDateandTime + "\n";
-                fOut.write(sCadena.getBytes());
-                fOut.flush();
-            } catch (Exception e) {
-                Toast.makeText(this, getResources().getString(R.string.ERROR_FICHERO), Toast.LENGTH_LONG).show();
+        final TimerTask timerTaskGrabarDatos = new TimerTask() {
+            public void run() {
+                grabarMedidas();
             }
+        };
 
-            final TimerTask timerTaskGrabarDatos = new TimerTask() {
-                public void run() {
-                    grabarMedidas();
-                }
-            };
-
-            timerGrabarDatos = new Timer();
-            timerGrabarDatos.scheduleAtFixedRate(timerTaskGrabarDatos, Sensado.TIEMPO_GRABACION_DATOS, Sensado.TIEMPO_GRABACION_DATOS);
+        timerGrabarDatos = new Timer();
+        timerGrabarDatos.scheduleAtFixedRate(timerTaskGrabarDatos, Sensado.TIEMPO_GRABACION_DATOS, Sensado.TIEMPO_GRABACION_DATOS);
 
         final TimerTask timerTaskUpdateData = new TimerTask() {
             public void run() {
@@ -352,6 +333,74 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         return START_NOT_STICKY;
     }
 
+    private void createSensedDataFiles() {
+        if (bAcelerometro) {
+            createSensorFile(Sensado.ACELEROMETRO);
+        }
+        if (bGiroscopo)
+            createSensorFile(Sensado.GIROSCOPO);
+        if (bMagnetometro)
+            createSensorFile(Sensado.MAGNETOMETRO);
+        if (bHeartRate)
+            createSensorFile(Sensado.HEART_RATE);
+    }
+
+    private void createSensorFile(int iSensor) {
+        String sFichero = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  sdf.format(new Date()) + "_";
+        try {
+            switch (iSensor) {
+                case Sensado.ACELEROMETRO:
+                    sFichero += "A.dat";
+                    fDataAcelerometro = new BufferedOutputStream(new FileOutputStream(sFichero));
+                    break;
+                case Sensado.GIROSCOPO:
+                    sFichero += "G.dat";
+                    fDataGiroscopo = new BufferedOutputStream(new FileOutputStream(sFichero));
+                    break;
+                case Sensado.MAGNETOMETRO:
+                    sFichero += "M.dat";
+                    fDataMagnetometro = new BufferedOutputStream(new FileOutputStream(sFichero));
+                    break;
+                case Sensado.HEART_RATE:
+                    sFichero += "HR.dat";
+                    fDataHR = new BufferedOutputStream(new FileOutputStream(sFichero));
+                    break;
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, getResources().getString(R.string.ERROR_FICHERO), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void createLogFile() {
+        File file;
+        int iNumFichero = 0;
+        String sFichero;
+        do {
+            sFichero = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  iNumFichero + "_Interno.txt";
+            file = new File(sFichero);
+            iNumFichero++;
+        } while (file.exists());
+
+        try {
+            String currentDateandTime = sdf.format(new Date());
+
+            fOut = new FileOutputStream(sFichero, false);
+            String sModel = Build.MODEL;
+            sModel = sModel.replace(" ", "_");
+            String sCadena = sModel + " " +
+                    bAcelerometro + " " + bGiroscopo + " " + bMagnetometro + " " + bHeartRate + " " +
+                    bFastestON + " " + bSendWifi + " " + bThreshold;
+            if (bThreshold) {
+                sCadena += "(" + sThresholds + ")";
+            }
+            sCadena += " " + currentDateandTime + "\n";
+            fOut.write(sCadena.getBytes());
+            fOut.flush();
+        } catch (Exception e) {
+            Toast.makeText(this, getResources().getString(R.string.ERROR_FICHERO), Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void procesaThresholds(String sThresholds) {
         String []sUmbrales = sThresholds.split(" ");
 
@@ -388,30 +437,29 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     }
 
     private void controlSensors(boolean bSensors_ON, int iSensorDelay) {
-        sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         if (bAcelerometro) {
-            sensorAcelerometro = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            Sensor sensorAcelerometro = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
             if (bSensors_ON)
                 sensorManager.registerListener(this, sensorAcelerometro, iSensorDelay);
             else
                 sensorManager.unregisterListener(this, sensorAcelerometro);
         }
         if (bGiroscopo) {
-            sensorGiroscopo = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+            Sensor sensorGiroscopo = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
             if (bSensors_ON)
                 sensorManager.registerListener(this, sensorGiroscopo, iSensorDelay);
             else
                 sensorManager.unregisterListener(this, sensorGiroscopo);
         }
         if (bMagnetometro) {
-            sensorMagnetometro = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+            Sensor sensorMagnetometro = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
             if (bSensors_ON)
                 sensorManager.registerListener(this, sensorMagnetometro, iSensorDelay);
             else
                 sensorManager.unregisterListener(this, sensorMagnetometro);
         }
         if (bHeartRate) {
-            sensorHeartRate = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
+            Sensor sensorHeartRate = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
             if (bSensors_ON)
                 sensorManager.registerListener(this, sensorHeartRate, iSensorDelay);
             else
@@ -545,24 +593,55 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
 
+                if (bSaveSensedData)
+                    try {
+                        fDataAcelerometro.write(dataAccelerometer[iPosDataAccelerometer].getBytes());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_GYROSCOPE:
                 dataGiroscope[iPosDataGiroscope].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGiroscope[iPosDataGiroscope].getBytes());
+
+                if (bSaveSensedData)
+                    try {
+                        fDataGiroscopo.write(dataGiroscope[iPosDataGiroscope].getBytes());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 iPosDataGiroscope = (iPosDataGiroscope + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_MAGNETIC_FIELD:
                 dataMagnetometer[iPosDataMagnetometer].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
+
+                if (bSaveSensedData)
+                    try {
+                        fDataMagnetometro.write(dataMagnetometer[iPosDataMagnetometer].getBytes());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_HEART_RATE:
                 dataHeartRate[iPosDataHeartRate].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
                     envioAsync.setData((byte) Sensor.TYPE_HEART_RATE, dataHeartRate[iPosDataHeartRate].getBytes());
+
+                if (bSaveSensedData)
+                    try {
+                        fDataHR.write(dataHeartRate[iPosDataHeartRate].getBytes());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
                 iPosDataHeartRate = (iPosDataHeartRate + 1) % iTamBuffer;
                 break;
         }
@@ -592,11 +671,24 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         timerGrabarDatos.cancel();
         try {
             timerSendBuffer.cancel();
-        } catch (NullPointerException e) {}
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        }
 
         try {
             grabarMedidas();
             fOut.close();
+
+            if (bSaveSensedData) {
+                if (bAcelerometro)
+                    fDataAcelerometro.close();
+                if (bGiroscopo)
+                    fDataGiroscopo.close();
+                if (bMagnetometro)
+                    fDataMagnetometro.close();
+                if (bHeartRate)
+                    fDataHR.close();
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }

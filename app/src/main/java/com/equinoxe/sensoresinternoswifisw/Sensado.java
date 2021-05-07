@@ -14,8 +14,6 @@ import android.widget.TextView;
 import androidx.fragment.app.FragmentActivity;
 import androidx.wear.ambient.AmbientModeSupport;
 
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 public class Sensado extends FragmentActivity implements AmbientModeSupport.AmbientCallbackProvider {
@@ -32,7 +30,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
     final static int ERROR        = 100;
     final static int MSG          = 200;
 
-    boolean bAccelerometer, bGyroscope, bMagneticField, bHR, bFastestON;
+    boolean bAccelerometer, bGyroscope, bMagneticField, bHR;
 
     String sMsgAccelerometer, sMsgGyroscope, sMsgMagnetometer, sMsgHR;
 
@@ -60,10 +58,17 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
         textViewMsg = findViewById(R.id.textViewMsg);
 
         Bundle extras = getIntent().getExtras();
-        bAccelerometer = extras.getBoolean("bAccelerometer", false);
-        bGyroscope = extras.getBoolean("bGyroscope", false);
-        bMagneticField = extras.getBoolean("bMagneticField", false);
-        bHR = extras.getBoolean("bHR", false);
+        try {
+            bAccelerometer = extras.getBoolean("bAccelerometer", true);
+            bGyroscope = extras.getBoolean("bGyroscope", false);
+            bMagneticField = extras.getBoolean("bMagneticField", false);
+            bHR = extras.getBoolean("bHR", false);
+        } catch (NullPointerException e) {
+            bAccelerometer = true;
+            bGyroscope = false;
+            bMagneticField = false;
+            bHR = false;
+        }
 
         controller = AmbientModeSupport.attach(this);
 
@@ -175,7 +180,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
             startService(intentServicioDatosInternalSensor);
     }
 
-    private BroadcastReceiver receiver = new BroadcastReceiver() {
+    private final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             Bundle bundle = intent.getExtras();
