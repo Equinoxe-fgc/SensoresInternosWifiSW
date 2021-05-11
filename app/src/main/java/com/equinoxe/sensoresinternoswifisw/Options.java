@@ -15,7 +15,7 @@ public class Options extends FragmentActivity {
     private TextView txtServer;
     private TextView txtPuerto;
     private CheckBox checkBoxFastON, checkBoxWifi, checkThreshold, checkVibrate, checkSaveSensedData;
-    private TextView txtWindowSize, txtSendPeriod, txtThreshold;
+    private TextView txtWindowSize, txtSendPeriod, txtThreshold, txtSubjectName;
     private LinearLayout layoutSendPeriod, layoutThreshold, layoutServerData;
 
     @Override
@@ -30,6 +30,7 @@ public class Options extends FragmentActivity {
         txtWindowSize = findViewById(R.id.editTextWindowSize);
         txtSendPeriod = findViewById(R.id.editTextSendPeriod);
         txtThreshold = findViewById(R.id.editTextThreshold);
+        txtSubjectName = findViewById(R.id.editTextSubjectName);
         checkThreshold = findViewById(R.id.checkBoxThreshold);
         checkVibrate = findViewById(R.id.checkBoxVibrate);
         checkSaveSensedData = findViewById(R.id.checkBoxSaveSensedData);
@@ -40,6 +41,7 @@ public class Options extends FragmentActivity {
         layoutServerData = findViewById(R.id.layoutServerData);
 
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
+        txtSubjectName.setText(pref.getString("SubjectName", "Subject_1"));
         txtServer.setText(pref.getString("server", "127.0.0.1"));
         String sCadena = "" + pref.getInt("puerto", 8000);
         txtPuerto.setText(sCadena);
@@ -101,6 +103,7 @@ public class Options extends FragmentActivity {
                 SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
                 SharedPreferences.Editor editor = pref.edit();
 
+                editor.putString("SubjectName", txtSubjectName.getText().toString());
                 editor.putString("server", txtServer.getText().toString());
                 editor.putInt("puerto", Integer.parseInt(txtPuerto.getText().toString()));
                 editor.putBoolean("FastON", checkBoxFastON.isChecked());

@@ -4,7 +4,7 @@
     This string is used for square devices and overridden by hello_world in
     values-round/strings.xml for round devices.
     -->
-    <string name="ReleaseDate">07/05/2021</string>
+    <string name="ReleaseDate">11/05/2021</string>
 
     <string name="ERROR_FICHERO">Error opening file</string>
     <string name="title_activity_sensado">Sensado</string>
@@ -39,4 +39,5 @@
     <string name="Threshold">Threshold</string>
     <string name="Vibrate">Vibrate</string>
     <string name="SaveSensedData">Save sensed data</string>
+    <string name="SubjectName">Subject name</string>
 </resources>

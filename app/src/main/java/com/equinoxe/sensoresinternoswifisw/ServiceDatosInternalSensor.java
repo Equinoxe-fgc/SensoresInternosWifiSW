@@ -50,6 +50,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     private SensorManager sensorManager;
 
     String sCadenaGiroscopo, sCadenaMagnetometro, sCadenaAcelerometro, sCadenaHeartRate;
+    String sSubjectName;
     private ServiceHandler mServiceHandler;
     Timer timerUpdateData;
     Timer timerGrabarDatos;
@@ -155,6 +156,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         bHeartRate = intent.getBooleanExtra(getString(R.string.HeartRate), false);
 
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
+
+        sSubjectName = pref.getString("SubjectName", "Subject_1");
         sServer = pref.getString("server", "127.0.0.1");
         iPort = pref.getInt("puerto", 8000);
         bFastestON = pref.getBoolean("FastON", false);
@@ -346,7 +349,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     }
 
     private void createSensorFile(int iSensor) {
-        String sFichero = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  sdf.format(new Date()) + "_";
+        String sFichero = Environment.getExternalStorageDirectory() + "/" + sSubjectName + "_" + Build.MODEL + "_" +  sdf.format(new Date()) + "_";
         try {
             switch (iSensor) {
                 case Sensado.ACELEROMETRO:
@@ -372,18 +375,18 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     }
 
     private void createLogFile() {
-        File file;
+        /*File file;
         int iNumFichero = 0;
         String sFichero;
         do {
             sFichero = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  iNumFichero + "_Interno.txt";
             file = new File(sFichero);
             iNumFichero++;
-        } while (file.exists());
+        } while (file.exists());*/
+        String currentDateandTime = sdf.format(new Date());
+        String sFichero = Environment.getExternalStorageDirectory() + "/" + sSubjectName + "_" + Build.MODEL + "_" +  currentDateandTime + "_Log.txt";
 
         try {
-            String currentDateandTime = sdf.format(new Date());
-
             fOut = new FileOutputStream(sFichero, false);
             String sModel = Build.MODEL;
             sModel = sModel.replace(" ", "_");
