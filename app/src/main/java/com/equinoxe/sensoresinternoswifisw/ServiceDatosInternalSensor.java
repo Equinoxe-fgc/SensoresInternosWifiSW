@@ -477,7 +477,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         try {
             String sCadena = sdf.format(new Date()) + ":" +
                     batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) + ":";
-            fOut.write(sCadena.getBytes());
+            //fOut.write(sCadena.getBytes());
 
             long lNumMsg = lNumMsgGiroscopo + lNumMsgMagnetometro + lNumMsgAcelerometro + lNumMsgHR;
 
