@@ -14,6 +14,9 @@ import android.widget.TextView;
 import androidx.fragment.app.FragmentActivity;
 import androidx.wear.ambient.AmbientModeSupport;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class Sensado extends FragmentActivity implements AmbientModeSupport.AmbientCallbackProvider {
@@ -39,9 +42,10 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
     private PendingIntent ambientUpdatePendingIntent;
     private BroadcastReceiver ambientUpdateBroadcastReceiver;
 
-    private TextView textViewMsg, textBattery, textViewAccelerometer, textViewGyroscope, textViewMagnetometer, textViewHR;
+    private TextView textViewMsg, textBattery, textHora, textViewAccelerometer, textViewGyroscope, textViewMagnetometer, textViewHR;
 
     Intent intentServicioDatosInternalSensor;
+    SimpleDateFormat sdf;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +54,10 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
 
         registerReceiver(receiver, new IntentFilter(NOTIFICATION));
 
+        sdf = new SimpleDateFormat("HH:mm", Locale.UK);
+
         textBattery = findViewById(R.id.textBattery);
+        textHora = findViewById(R.id.textViewHora);
         textViewAccelerometer = findViewById(R.id.textViewAccelerometer);
         textViewGyroscope = findViewById(R.id.textViewGyroscope);
         textViewMagnetometer = findViewById(R.id.textViewMagnetometer);
@@ -102,6 +109,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
         String sBateria = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) + " %";
         textBattery.setText(sBateria);
 
+        textHora.setText(sdf.format(new Date()));
         textViewAccelerometer.setText(sMsgAccelerometer);
         textViewGyroscope.setText(sMsgGyroscope);
         textViewMagnetometer.setText(sMsgMagnetometer);

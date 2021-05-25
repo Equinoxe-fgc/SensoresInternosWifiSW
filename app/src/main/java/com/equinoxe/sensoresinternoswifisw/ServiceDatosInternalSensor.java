@@ -36,6 +36,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class ServiceDatosInternalSensor extends Service implements SensorEventListener {
+    private static final int INITIAL_SEND_MS = 30 * 1000;
     private static final int MUESTRAS_POR_SEGUNDO_GAME = 60;
     private static final int MUESTRAS_POR_SEGUNDO_FASTEST = 110;
     private final static boolean SENSORS_ON = true;
@@ -269,7 +270,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
         if (bSendWifi && iSendPeriod != 0) {
             timerSendBuffer = new Timer();
-            timerSendBuffer.scheduleAtFixedRate(timerTaskSendBuffer, iSendPeriod * 1000, iSendPeriod * 1000);
+            timerSendBuffer.scheduleAtFixedRate(timerTaskSendBuffer, INITIAL_SEND_MS, iSendPeriod * 1000);
         }
 
 
