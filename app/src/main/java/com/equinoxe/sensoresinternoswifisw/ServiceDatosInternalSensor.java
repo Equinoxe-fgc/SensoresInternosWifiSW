@@ -55,8 +55,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     Timer timerUpdateData;
     Timer timerGrabarDatos;
     Timer timerSendBuffer;
-    Timer timerSendAcelerometro;
-    TimerTask timerTaskSendAcelerometro = null;
+    Timer timerSendSensorsData;
+    TimerTask timerTaskSendSensorsData = null;
 
     int iDataAccelerometroSent, iDataGiroscopoSent, iDataMagnetometroSent, iDataHeartRateSent;
     boolean bSendAccelerometro, bSendGiroscopo, bSendMagnetometro, bSendHeartRate;
@@ -274,7 +274,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         }
 
 
-        timerTaskSendAcelerometro = new TimerTask() {
+        timerTaskSendSensorsData = new TimerTask() {
             @Override
             public void run() {
                 if (!bSendingData)
@@ -330,16 +330,15 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
         bCaidaDetectada = false;
 
-        timerSendAcelerometro = new Timer();
-        timerSendAcelerometro.scheduleAtFixedRate(timerTaskSendAcelerometro, 1, 20);
+        timerSendSensorsData = new Timer();
+        timerSendSensorsData.scheduleAtFixedRate(timerTaskSendSensorsData, 1, 20);
 
         return START_NOT_STICKY;
     }
 
     private void createSensedDataFiles() {
-        if (bAcelerometro) {
+        if (bAcelerometro)
             createSensorFile(Sensado.ACELEROMETRO);
-        }
         if (bGiroscopo)
             createSensorFile(Sensado.GIROSCOPO);
         if (bMagnetometro)
@@ -713,5 +712,6 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         // We don't provide binding, so return null
         return null;
     }
+
 
 }
