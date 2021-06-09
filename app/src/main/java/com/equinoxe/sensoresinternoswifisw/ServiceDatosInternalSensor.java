@@ -251,15 +251,6 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         msg.arg1 = startId;
         mServiceHandler.sendMessage(msg);
 
-        if (bSendWifi) {
-            envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
-            envioAsync.start();
-
-            if (iSendPeriod == 0) {
-                envioAsync.connect();
-            }
-        }
-
         final TimerTask timerTaskSendBuffer = new TimerTask() {
             @Override
             public void run() {
@@ -268,16 +259,21 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             }
         };
 
-        if (bSendWifi && iSendPeriod != 0) {
+        if (bSendWifi) {
             timerSendBuffer = new Timer();
             timerSendBuffer.scheduleAtFixedRate(timerTaskSendBuffer, INITIAL_SEND_MS, iSendPeriod * 1000);
-        }
 
+            if (iSendPeriod == 0) {
+                envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
+                envioAsync.connect();
+                envioAsync.start();
+            }
+        }
 
         timerTaskSendSensorsData = new TimerTask() {
             @Override
             public void run() {
-                if (!bSendingData)
+                if (!bSendingData || !envioAsync.isConnected())
                     return;
 
                 if (bSendAccelerometro) {
@@ -317,6 +313,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 if (bSendingData && !bSendAccelerometro && !bSendGiroscopo && !bSendMagnetometro && !bSendHeartRate) {
                     bSendingData = false;
                     envioAsync.disconnect();
+                    envioAsync.interrupt();
                     controlSensors(SENSORS_ON, iSensorDelay);
                 }
             }
@@ -331,7 +328,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         bCaidaDetectada = false;
 
         timerSendSensorsData = new Timer();
-        timerSendSensorsData.scheduleAtFixedRate(timerTaskSendSensorsData, 1, 20);
+        timerSendSensorsData.scheduleAtFixedRate(timerTaskSendSensorsData, 1, 100);
 
         return START_NOT_STICKY;
     }
@@ -417,7 +414,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     }
 
     private void enviarBuffers() {
+        envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
         envioAsync.connect();
+        envioAsync.start();
 
         if (bAcelerometro) {
             iDataAccelerometroSent = 0;
@@ -698,7 +697,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         try {
             if (bSendWifi && iSendPeriod == 0)
                 envioAsync.disconnect();
-                envioAsync.finalize();
+                envioAsync.interrupt();
         }
         catch (Throwable throwable) {
             throwable.printStackTrace();
