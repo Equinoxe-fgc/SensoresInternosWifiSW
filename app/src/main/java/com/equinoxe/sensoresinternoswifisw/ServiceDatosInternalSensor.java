@@ -39,7 +39,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     private static final int INITIAL_SEND_MS = 30 * 1000;
     private static final int MUESTRAS_POR_SEGUNDO_GAME = 60;
     private static final int MUESTRAS_POR_SEGUNDO_FASTEST = 110;
-    public static final int TEST_DATA_TO_SEND = 1 * 1000;
+    public static final int TEST_DATA_TO_SEND = 100;
     private final static boolean SENSORS_ON = true;
     private final static boolean SENSORS_OFF = false;
 
