@@ -39,6 +39,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     private static final int INITIAL_SEND_MS = 30 * 1000;
     private static final int MUESTRAS_POR_SEGUNDO_GAME = 60;
     private static final int MUESTRAS_POR_SEGUNDO_FASTEST = 110;
+    public static final int TEST_DATA_TO_SEND = 1 * 1000;
     private final static boolean SENSORS_ON = true;
     private final static boolean SENSORS_OFF = false;
 
@@ -327,8 +328,10 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
         bCaidaDetectada = false;
 
-        timerSendSensorsData = new Timer();
-        timerSendSensorsData.scheduleAtFixedRate(timerTaskSendSensorsData, 1, 100);
+        if (bSendWifi) {
+            timerSendSensorsData = new Timer();
+            timerSendSensorsData.scheduleAtFixedRate(timerTaskSendSensorsData, TEST_DATA_TO_SEND, TEST_DATA_TO_SEND);
+        }
 
         return START_NOT_STICKY;
     }
@@ -371,14 +374,6 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     }
 
     private void createLogFile() {
-        /*File file;
-        int iNumFichero = 0;
-        String sFichero;
-        do {
-            sFichero = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  iNumFichero + "_Interno.txt";
-            file = new File(sFichero);
-            iNumFichero++;
-        } while (file.exists());*/
         String currentDateandTime = sdf.format(new Date());
         String sFichero = Environment.getExternalStorageDirectory() + "/" + sSubjectName + "_" + Build.MODEL + "_" +  currentDateandTime + "_Log.txt";
 
@@ -386,9 +381,16 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             fOut = new FileOutputStream(sFichero, false);
             String sModel = Build.MODEL;
             sModel = sModel.replace(" ", "_");
-            String sCadena = sModel + " " +
-                    bAcelerometro + " " + bGiroscopo + " " + bMagnetometro + " " + bHeartRate + " " +
-                    bFastestON + " " + bSendWifi + " " + bThreshold;
+            String sCadena = sModel + " A:" + bAcelerometro +
+                                      " G:" + bGiroscopo +
+                                      " M:" + bMagnetometro +
+                                      " HR:" + bHeartRate +
+                                      " Fastest:" + bFastestON +
+                                      " SendWifi:" + bSendWifi;
+            if (bSendWifi)
+                sCadena += "(" + iSendPeriod + ")";
+
+            sCadena += " TH:" + bThreshold;
             if (bThreshold) {
                 sCadena += "(" + sThresholds + ")";
             }
