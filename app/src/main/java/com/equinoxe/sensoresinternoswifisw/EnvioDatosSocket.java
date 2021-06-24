@@ -9,6 +9,7 @@ public class EnvioDatosSocket extends Thread {
     private Socket socket = null;
     private byte []data;
     private boolean bDataToSend = false;
+    private boolean bStarted = false;
     private String sServer;
     private int iPuerto;
     private int iTamano;
@@ -19,6 +20,8 @@ public class EnvioDatosSocket extends Thread {
         this.iPuerto = iPuerto;
         this.iTamano = iTamano;
         data = new byte[iTamano];
+
+        //connect();
     }
 
     public void setData(byte iDevice, byte []data) {
@@ -30,8 +33,20 @@ public class EnvioDatosSocket extends Thread {
         }
     }
 
+    public void setData(byte []data) {
+        synchronized (this) {
+            System.arraycopy(data, 0, this.data, 0, iTamano);
+
+            bDataToSend = true;
+        }
+    }
+
     public boolean isConnected() {
         return (socket != null && !socket.isClosed() && socket.isConnected());
+    }
+
+    public boolean isStarted() {
+        return bStarted;
     }
 
     public void connect() {
@@ -41,7 +56,7 @@ public class EnvioDatosSocket extends Thread {
             outputStream = socket.getOutputStream();
             Log.d("EnvioDatosSocket.java", "Stream creado");
         } catch (Exception e) {
-            Log.d("EnvioDatosSocket.java", "Error conectando: " + e.getMessage());
+            Log.d("EnvioDatosSocket.java", "Error conectando: " + e.toString());
         }
     }
 
@@ -53,18 +68,25 @@ public class EnvioDatosSocket extends Thread {
 
             socket = null;
         } catch (Exception e) {
-            Log.d("EnvioDatosSocket.java", "Error desconectando: " + e.getMessage());
+            Log.d("EnvioDatosSocket.java", "Error desconectando: " + e.toString());
         }
+    }
+
+    public boolean pendingDataToSend() {
+        return bDataToSend;
     }
 
     @Override
     public void run() {
+        connect();
+        bStarted = true;
         while (!Thread.interrupted()) {
             try {
-                if (bDataToSend) {
+                if (bDataToSend && isConnected()) {
                     //Log.d("EnvioDatosSocket.java", "Enviando datos");
                     synchronized (this) {
                         outputStream.write(data);
+                        outputStream.flush();
                         bDataToSend = false;
                     }
                 }

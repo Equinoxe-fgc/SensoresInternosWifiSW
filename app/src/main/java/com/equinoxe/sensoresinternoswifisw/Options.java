@@ -41,8 +41,8 @@ public class Options extends FragmentActivity {
         layoutServerData = findViewById(R.id.layoutServerData);
 
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
-        txtSubjectName.setText(pref.getString("SubjectName", "Subject_1"));
-        txtServer.setText(pref.getString("server", "127.0.0.1"));
+        txtSubjectName.setText(pref.getString("SubjectName", getResources().getText(R.string.defaultSubject).toString()));
+        txtServer.setText(pref.getString("server", getResources().getText(R.string.defaultServerIP).toString()));
         String sCadena = "" + pref.getInt("puerto", 8000);
         txtPuerto.setText(sCadena);
         checkBoxFastON.setChecked(pref.getBoolean("FastON", false));

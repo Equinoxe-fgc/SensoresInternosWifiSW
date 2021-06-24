@@ -10,6 +10,7 @@ public class SensorData {
     private double dModule;
     private byte []bytes = new byte[BYTES];
 
+
     public void setData(long timeStamp, float []values) {
         this.timeStamp[0] = timeStamp;
         this.v1 = values[0];
