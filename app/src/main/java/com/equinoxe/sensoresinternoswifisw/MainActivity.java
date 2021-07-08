@@ -3,17 +3,13 @@ package com.equinoxe.sensoresinternoswifisw;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.VibrationEffect;
-import android.os.Vibrator;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.FragmentActivity;
@@ -21,13 +17,14 @@ import androidx.fragment.app.FragmentActivity;
 import java.util.List;
 
 public class MainActivity extends FragmentActivity {
-    boolean bAccelerometer, bGyroscope, bMagneticField, bHR;
+    boolean bAccelerometer, bGyroscope, bMagneticField, bHR, bBarometer;
 
     private Button buttonStartSensing;
     private CheckBox checkAccelerometer;
     private CheckBox checkGyroscope;
     private CheckBox checkMagnetometer;
     private CheckBox checkHR;
+    private CheckBox checkBarometer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +36,7 @@ public class MainActivity extends FragmentActivity {
         checkGyroscope = findViewById(R.id.checkBoxGyroscope);
         checkMagnetometer = findViewById(R.id.checkBoxMagnetometer);
         checkHR = findViewById(R.id.checkBoxHR);
+        checkBarometer = findViewById(R.id.checkBoxBarometer);
 
         SensorManager sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         List<Sensor> lista = sensorManager.getSensorList(Sensor.TYPE_ALL);
@@ -57,17 +55,16 @@ public class MainActivity extends FragmentActivity {
                 case Sensor.TYPE_HEART_RATE:
                     bHR = true;
                     break;
+                case Sensor.TYPE_PRESSURE:
+                    bBarometer = true;
             }
         }
 
-        if (bAccelerometer)
-            checkAccelerometer.setEnabled(true);
-        if (bGyroscope)
-            checkGyroscope.setEnabled(true);
-        if (bMagneticField)
-            checkMagnetometer.setEnabled(true);
-        if (bHR)
-            checkHR.setEnabled(true);
+        checkAccelerometer.setEnabled(bAccelerometer);
+        checkGyroscope.setEnabled(bGyroscope);
+        checkMagnetometer.setEnabled(bMagneticField);
+        checkHR.setEnabled(bHR);
+        checkBarometer.setEnabled(bBarometer);
 
         checkForPermissions();
 
@@ -77,9 +74,9 @@ public class MainActivity extends FragmentActivity {
 
         checkMagnetometer.setOnCheckedChangeListener((buttonView, isChecked) -> comprobarSensoresSeleccionados());
 
-        checkHR.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            comprobarSensoresSeleccionados();
-        });
+        checkHR.setOnCheckedChangeListener((buttonView, isChecked) -> comprobarSensoresSeleccionados());
+
+        checkBarometer.setOnCheckedChangeListener((buttonView, isChecked) -> comprobarSensoresSeleccionados());
 
         /*SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
@@ -99,6 +96,7 @@ public class MainActivity extends FragmentActivity {
         intent.putExtra("bGyroscope", checkGyroscope.isChecked());
         intent.putExtra("bMagneticField", checkMagnetometer.isChecked());
         intent.putExtra("bHR", checkHR.isChecked());
+        intent.putExtra("bBarometer", checkBarometer.isChecked());
         startActivity(intent);
     }
 

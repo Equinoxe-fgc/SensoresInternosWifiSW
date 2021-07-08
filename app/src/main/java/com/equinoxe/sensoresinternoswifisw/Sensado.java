@@ -32,19 +32,20 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
     final static int GIROSCOPO    = 1;
     final static int MAGNETOMETRO = 2;
     final static int HEART_RATE   = 3;
+    final static int BAROMETER    = 4;
     final static int ERROR        = 100;
     final static int MSG          = 200;
 
-    boolean bAccelerometer, bGyroscope, bMagneticField, bHR;
+    boolean bAccelerometer, bGyroscope, bMagneticField, bHR, bBarometer;
 
-    String sMsgAccelerometer, sMsgGyroscope, sMsgMagnetometer, sMsgHR;
+    String sMsgAccelerometer, sMsgGyroscope, sMsgMagnetometer, sMsgHR, sMsgBarometer;
 
     AmbientModeSupport.AmbientController controller;
     private AlarmManager ambientUpdateAlarmManager;
     private PendingIntent ambientUpdatePendingIntent;
     private BroadcastReceiver ambientUpdateBroadcastReceiver;
 
-    private TextView textViewMsg, textBattery, textHora, textViewAccelerometer, textViewGyroscope, textViewMagnetometer, textViewHR;
+    private TextView textViewMsg, textBattery, textHora, textViewAccelerometer, textViewGyroscope, textViewMagnetometer, textViewHR, textViewBarometer;
 
     Intent intentServicioDatosInternalSensor;
     SimpleDateFormat sdf;
@@ -65,6 +66,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
         textViewMagnetometer = findViewById(R.id.textViewMagnetometer);
         textViewHR = findViewById(R.id.textViewHR);
         textViewMsg = findViewById(R.id.textViewMsg);
+        textViewBarometer = findViewById(R.id.textViewBarometer);
 
         Bundle extras = getIntent().getExtras();
         try {
@@ -72,12 +74,22 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
             bGyroscope = extras.getBoolean("bGyroscope", false);
             bMagneticField = extras.getBoolean("bMagneticField", false);
             bHR = extras.getBoolean("bHR", false);
+            bBarometer = extras.getBoolean("bBarometer", false);
         } catch (NullPointerException e) {
             bAccelerometer = true;
             bGyroscope = false;
             bMagneticField = false;
             bHR = false;
+            bBarometer = false;
         }
+        if (!bMagneticField)
+            textViewMagnetometer.setVisibility(View.GONE);
+        if (!bHR)
+            textViewHR.setVisibility(View.GONE);
+        if (!bBarometer)
+            textViewBarometer.setVisibility(View.GONE);
+        if (!bGyroscope)
+            textViewGyroscope.setVisibility(View.GONE);
 
         controller = AmbientModeSupport.attach(this);
 
@@ -95,7 +107,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
             }
         };
 
-        sMsgAccelerometer = sMsgGyroscope = sMsgMagnetometer = sMsgHR = "";
+        sMsgAccelerometer = sMsgGyroscope = sMsgMagnetometer = sMsgHR = sMsgBarometer = "";
         crearServicio();
     }
 
@@ -115,6 +127,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
         textViewAccelerometer.setText(sMsgAccelerometer);
         textViewGyroscope.setText(sMsgGyroscope);
         textViewMagnetometer.setText(sMsgMagnetometer);
+        textViewBarometer.setText(sMsgBarometer);
         textViewHR.setText(sMsgHR);
 
         long timeMs = System.currentTimeMillis();
@@ -189,6 +202,7 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
             intentServicioDatosInternalSensor.putExtra(getString(R.string.Gyroscope), bGyroscope);
             intentServicioDatosInternalSensor.putExtra(getString(R.string.Magnetometer), bMagneticField);
             intentServicioDatosInternalSensor.putExtra(getString(R.string.HeartRate), bHR);
+            intentServicioDatosInternalSensor.putExtra(getString(R.string.Barometer), bBarometer);
 
             startService(intentServicioDatosInternalSensor);
     }
@@ -219,6 +233,9 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
                                 break;
                             case HEART_RATE:
                                 sMsgHR = sCadena;
+                                break;
+                            case BAROMETER:
+                                sMsgBarometer = sCadena;
                                 break;
                         }
                     }

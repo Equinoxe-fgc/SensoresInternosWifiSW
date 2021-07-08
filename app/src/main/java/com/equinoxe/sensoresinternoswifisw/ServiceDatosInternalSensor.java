@@ -42,24 +42,21 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     private final static boolean SENSORS_ON = true;
     private final static boolean SENSORS_OFF = false;
 
-    boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bFastestON, bSendWifi, bThreshold;
+    boolean bAcelerometro, bGiroscopo, bMagnetometro, bHeartRate, bBarometer, bFastestON, bSendWifi, bThreshold;
     int iWindowSize, iSendPeriod;
     String sThresholds;
     boolean bVibrate;
 
     private SensorManager sensorManager;
 
-    String sCadenaGiroscopo, sCadenaMagnetometro, sCadenaAcelerometro, sCadenaHeartRate;
+    String sCadenaGiroscopo, sCadenaMagnetometro, sCadenaAcelerometro, sCadenaHeartRate, sCadenaBarometro;
     String sSubjectName;
     private ServiceHandler mServiceHandler;
     Timer timerUpdateData;
     Timer timerGrabarDatos;
     Timer timerSendBuffer;
-    Timer timerCheckEnSendSensorsData;
-    TimerTask timerTaskCheckSendSensorsData = null;
 
-    int iDataAccelerometroSent, iDataGiroscopoSent, iDataMagnetometroSent, iDataHeartRateSent;
-    boolean bSendAccelerometro, bSendGiroscopo, bSendMagnetometro, bSendHeartRate;
+    boolean bSendAccelerometro, bSendGiroscopo, bSendMagnetometro, bSendHeartRate, bSendBarometro;
     boolean bSendingData;
     boolean bSaveSensedData;
 
@@ -67,17 +64,18 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
     SimpleDateFormat sdf;
     FileOutputStream fOut;
-    OutputStream fDataAcelerometro, fDataGiroscopo, fDataMagnetometro, fDataHR;
+    OutputStream fDataAcelerometro, fDataGiroscopo, fDataMagnetometro, fDataHR, fDataBarometro;
 
-    long lNumMsgGiroscopo, lNumMsgMagnetometro, lNumMsgAcelerometro, lNumMsgHR;
+    long lNumMsgGiroscopo, lNumMsgMagnetometro, lNumMsgAcelerometro, lNumMsgHR, lNumMsgBarometro;
 
     PowerManager powerManager;
     PowerManager.WakeLock wakeLock;
 
     int iTamBuffer;
     SensorData []dataAccelerometer;
-    SensorData []dataGiroscope;
+    SensorData []dataGyroscope;
     SensorData []dataMagnetometer;
+    SensorData []dataBarometer;
     //SensorData []dataHeartRate;
     SensorData dataHeartRate = new SensorData();
 
@@ -88,6 +86,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     int iPosDataAccelerometer = 0;
     int iPosDataGiroscope = 0;
     int iPosDataMagnetometer = 0;
+    int iPosDataBarometer = 0;
     //int iPosDataHeartRate = 0;
 
     boolean bCaidaDetectada;
@@ -132,6 +131,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 case Sensado.HEART_RATE:
                     publishSensorValues(Sensado.HEART_RATE, msg.arg2, sCadenaHeartRate);
                     break;
+                case Sensado.BAROMETER:
+                    publishSensorValues(Sensado.BAROMETER, msg.arg2, sCadenaBarometro);
+                    break;
             }
         }
     }
@@ -152,6 +154,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         lNumMsgGiroscopo = 0;
         lNumMsgMagnetometro = 0;
         lNumMsgAcelerometro = 0;
+        lNumMsgBarometro = 0;
         //lNumMsgHR = 0;
 
         df = new DecimalFormat("###.##");
@@ -160,6 +163,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         bGiroscopo = intent.getBooleanExtra(getString(R.string.Gyroscope), false);
         bMagnetometro = intent.getBooleanExtra(getString(R.string.Magnetometer), false);
         bHeartRate = intent.getBooleanExtra(getString(R.string.HeartRate), false);
+        bBarometer = intent.getBooleanExtra(getString(R.string.Barometer), false);
 
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
 
@@ -227,6 +231,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                     msg.arg1 = Sensado.HEART_RATE;
                     mServiceHandler.sendMessage(msg);
                 }
+
+                if (bBarometer) {
+                    Message msg = mServiceHandler.obtainMessage();
+                    msg.arg2 = 0;
+                    msg.arg1 = Sensado.BAROMETER;
+                    mServiceHandler.sendMessage(msg);
+                }
             }
         };
 
@@ -237,9 +248,11 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         if (bAcelerometro)
             dataAccelerometer = new SensorData[iTamBuffer];
         if (bGiroscopo)
-            dataGiroscope = new SensorData[iTamBuffer];
+            dataGyroscope = new SensorData[iTamBuffer];
         if (bMagnetometro)
             dataMagnetometer = new SensorData[iTamBuffer];
+        if (bBarometer)
+            dataBarometer = new SensorData[iTamBuffer];
         /*if (bHeartRate)
             dataHeartRate = new SensorData[iTamBuffer];*/
 
@@ -247,9 +260,11 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             if (bAcelerometro)
                 dataAccelerometer[i] = new SensorData();
             if (bGiroscopo)
-                dataGiroscope[i] = new SensorData();
+                dataGyroscope[i] = new SensorData();
             if (bMagnetometro)
                 dataMagnetometer[i] = new SensorData();
+            if (bBarometer)
+                dataBarometer[i] = new SensorData();
             /*if (bHeartRate)
                 dataHeartRate[i] = new SensorData();*/
         }
@@ -261,6 +276,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             if (bGiroscopo)
                 iMultiplicador++;
             if (bMagnetometro)
+                iMultiplicador++;
+            if (bBarometer)
                 iMultiplicador++;
 
             // Se pide memoria para mandar un buffer con todos los datos de los sensores y un dato de HR
@@ -318,6 +335,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         bSendGiroscopo = false;
         bSendMagnetometro = false;
         bSendHeartRate = false;
+        bSendBarometro = false;
         bSendingData = false;
 
         bCaidaDetectada = false;
@@ -334,6 +352,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             createSensorFile(Sensado.MAGNETOMETRO);
         if (bHeartRate)
             createSensorFile(Sensado.HEART_RATE);
+        if (bBarometer)
+            createSensorFile(Sensado.BAROMETER);
     }
 
     private void createSensorFile(int iSensor) {
@@ -352,10 +372,14 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                     sFichero += "M.dat";
                     fDataMagnetometro = new BufferedOutputStream(new FileOutputStream(sFichero));
                     break;
-                /*case Sensado.HEART_RATE:
+                case Sensado.BAROMETER:
+                    sFichero += "B.dat";
+                    fDataBarometro = new BufferedOutputStream(new FileOutputStream(sFichero));
+                    break;
+                case Sensado.HEART_RATE:
                     sFichero += "HR.dat";
                     fDataHR = new BufferedOutputStream(new FileOutputStream(sFichero));
-                    break;*/
+                    break;
             }
         } catch (Exception e) {
             Toast.makeText(this, getResources().getString(R.string.ERROR_FICHERO), Toast.LENGTH_LONG).show();
@@ -373,6 +397,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             String sCadena = sModel + " A:" + bAcelerometro +
                                       " G:" + bGiroscopo +
                                       " M:" + bMagnetometro +
+                                      " B:" + bBarometer +
                                       " HR:" + bHeartRate +
                                       " Fastest:" + bFastestON +
                                       " SendWifi:" + bSendWifi;
@@ -422,7 +447,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         }
         if (bGiroscopo) {
             for (int i = 0; i < iTamBuffer; i++) {
-                System.arraycopy(dataGiroscope[iPosDataGiroscope].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
+                System.arraycopy(dataGyroscope[iPosDataGiroscope].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
                 iPosData += SensorData.BYTES;
 
@@ -438,7 +463,15 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
             }
         }
+        if (bBarometer) {
+            for (int i = 0; i < iTamBuffer; i++) {
+                System.arraycopy(dataBarometer[iPosDataBarometer].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
+                iPosData += SensorData.BYTES;
+
+                iPosDataBarometer = (iPosDataBarometer + 1) % iTamBuffer;
+            }
+        }
         if (bHeartRate)
             System.arraycopy(dataHeartRate.getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
@@ -469,6 +502,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             else
                 sensorManager.unregisterListener(this, sensorMagnetometro);
         }
+        if (bBarometer) {
+            Sensor sensorBarometer = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+            if (bSensors_ON)
+                sensorManager.registerListener(this, sensorBarometer, iSensorDelay);
+            else
+                sensorManager.unregisterListener(this, sensorBarometer);
+        }
         /*if (bHeartRate) {
             Sensor sensorHeartRate = sensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
             if (bSensors_ON)
@@ -495,11 +535,12 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                     batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) + ":";
             //fOut.write(sCadena.getBytes());
 
-            long lNumMsg = lNumMsgGiroscopo + lNumMsgMagnetometro + lNumMsgAcelerometro + lNumMsgHR;
+            long lNumMsg = lNumMsgGiroscopo + lNumMsgMagnetometro + lNumMsgAcelerometro + lNumMsgBarometro + lNumMsgHR;
 
             sCadena += "(" + lNumMsgAcelerometro + ")";
             sCadena += "(" + lNumMsgGiroscopo + ")";
             sCadena += "(" + lNumMsgMagnetometro + ")";
+            sCadena += "(" + lNumMsgBarometro + ")";
             sCadena += "(" + lNumMsgHR + ")";
 
             sCadena += "(" + lNumMsg + ")";
@@ -551,6 +592,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                             + df.format(event.values[1]) + " "
                             + df.format(event.values[2]);
                     procesarDatosSensados(Sensor.TYPE_MAGNETIC_FIELD, event.timestamp, event.values);
+                }
+                break;
+            case Sensor.TYPE_PRESSURE:
+                if (bBarometer) {
+                    lNumMsgBarometro++;
+                    sCadenaBarometro = "B: " + df.format(event.values[0]);
+                    procesarDatosSensados(Sensor.TYPE_PRESSURE, event.timestamp, event.values);
                 }
                 break;
             case Sensor.TYPE_HEART_RATE:
@@ -622,13 +670,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_GYROSCOPE:
-                dataGiroscope[iPosDataGiroscope].setData(timeStamp, values);
+                dataGyroscope[iPosDataGiroscope].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
-                    envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGiroscope[iPosDataGiroscope].getBytes());
+                    envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGyroscope[iPosDataGiroscope].getBytes());
 
                 if (bSaveSensedData)
                     try {
-                        fDataGiroscopo.write(dataGiroscope[iPosDataGiroscope].getBytes());
+                        fDataGiroscopo.write(dataGyroscope[iPosDataGiroscope].getBytes());
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -648,6 +696,20 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                     }
 
                 iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
+                break;
+            case Sensor.TYPE_PRESSURE:
+                dataBarometer[iPosDataBarometer].setData(timeStamp, values);
+                if (bSendWifi && iSendPeriod == 0)
+                    envioAsync.setData((byte) Sensor.TYPE_PRESSURE, dataBarometer[iPosDataBarometer].getBytes());
+
+                if (bSaveSensedData)
+                    try {
+                        fDataBarometro.write(dataBarometer[iPosDataBarometer].getBytes());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                iPosDataBarometer = (iPosDataBarometer + 1) % iTamBuffer;
                 break;
             case Sensor.TYPE_HEART_RATE:
                 //dataHeartRate[iPosDataHeartRate].setData(timeStamp, values);
@@ -714,6 +776,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                     fDataMagnetometro.close();
                 if (bHeartRate)
                     fDataHR.close();
+                if (bBarometer)
+                    fDataBarometro.close();
             }
         } catch (IOException e) {
             e.printStackTrace();
