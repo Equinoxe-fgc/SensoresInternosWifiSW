@@ -67,6 +67,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     OutputStream fDataAcelerometro, fDataGiroscopo, fDataMagnetometro, fDataHR, fDataBarometro;
 
     long lNumMsgGiroscopo, lNumMsgMagnetometro, lNumMsgAcelerometro, lNumMsgHR, lNumMsgBarometro;
+    long lNumMsgGiroscopoAnterior, lNumMsgMagnetometroAnterior, lNumMsgAcelerometroAnterior, lNumMsgBarometroAnterior;
 
     PowerManager powerManager;
     PowerManager.WakeLock wakeLock;
@@ -157,6 +158,11 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         lNumMsgBarometro = 0;
         //lNumMsgHR = 0;
 
+        lNumMsgGiroscopoAnterior = 0;
+        lNumMsgMagnetometroAnterior = 0;
+        lNumMsgAcelerometroAnterior = 0;
+        lNumMsgBarometroAnterior = 0;
+
         df = new DecimalFormat("###.##");
 
         bAcelerometro = intent.getBooleanExtra(getString(R.string.Accelerometer), false);
@@ -195,6 +201,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
         final TimerTask timerTaskGrabarDatos = new TimerTask() {
             public void run() {
+                comprobarParadaSensores();
                 grabarMedidas();
             }
         };
@@ -342,6 +349,28 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
         return START_NOT_STICKY;
     }
+
+    private void comprobarParadaSensores() {
+        boolean bReiniciar = false;
+
+        bReiniciar = (lNumMsgAcelerometro == lNumMsgAcelerometroAnterior);
+        bReiniciar |= (bGiroscopo && lNumMsgGiroscopo == lNumMsgGiroscopoAnterior);
+        bReiniciar |= (bMagnetometro && lNumMsgMagnetometro == lNumMsgMagnetometroAnterior);
+        bReiniciar |= (bBarometer && lNumMsgBarometro == lNumMsgBarometroAnterior);
+
+        if (bReiniciar) {
+            controlSensors(SENSORS_OFF);
+            vibrate(1);
+            controlSensors(SENSORS_ON);
+        }
+        else {
+            lNumMsgAcelerometroAnterior = lNumMsgAcelerometro;
+            lNumMsgGiroscopoAnterior = lNumMsgGiroscopo;
+            lNumMsgMagnetometroAnterior = lNumMsgMagnetometro;
+            lNumMsgBarometroAnterior = lNumMsgBarometro;
+        }
+    }
+
 
     private void createSensedDataFiles() {
         if (bAcelerometro)
