@@ -359,9 +359,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         bReiniciar |= (bBarometer && lNumMsgBarometro == lNumMsgBarometroAnterior);
 
         if (bReiniciar) {
-            controlSensors(SENSORS_OFF);
+            // Se envía un mensaje para que se pare el servicio y se vuelva a iniciar
+            publishSensorValues(Sensado.ERROR, Sensado.ERROR, "");
             vibrate(1);
-            controlSensors(SENSORS_ON);
+            /*controlSensors(SENSORS_OFF);
+            vibrate(1);
+            controlSensors(SENSORS_ON);*/
+
         }
         else {
             lNumMsgAcelerometroAnterior = lNumMsgAcelerometro;

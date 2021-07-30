@@ -1,6 +1,11 @@
 package com.equinoxe.sensoresinternoswifisw;
 
+import android.content.Context;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
 import android.util.Log;
+import android.widget.Toast;
+
 import java.io.OutputStream;
 import java.net.Socket;
 
@@ -103,7 +108,6 @@ public class EnvioDatosSocket extends Thread {
                 fOut.write(sCadena.getBytes());*/
                 // Se vuelve a crear la conexión
                 connect();
-
             }
         }
     }

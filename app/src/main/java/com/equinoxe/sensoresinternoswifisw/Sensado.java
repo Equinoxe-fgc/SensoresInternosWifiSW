@@ -217,10 +217,16 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
                 int iDevice = bundle.getInt("Device");
                 String sCadena = bundle.getString("Cadena");
 
-                if (iDevice == MSG)
-                    textViewMsg.setText(sCadena);
-                else {
-                    if (iDevice != ERROR) {
+                switch (iDevice) {
+                    case MSG:
+                        textViewMsg.setText(sCadena);
+                        break;
+                    case ERROR:
+                        // Se para el servicio y se vuelve a iniciar
+                        stopService(intentServicioDatosInternalSensor);
+                        crearServicio();
+                        break;
+                    default:
                         switch (iSensor) {
                             case ACELEROMETRO:
                                 sMsgAccelerometer = sCadena;
@@ -238,7 +244,6 @@ public class Sensado extends FragmentActivity implements AmbientModeSupport.Ambi
                                 sMsgBarometer = sCadena;
                                 break;
                         }
-                    }
                 }
             }
         }
