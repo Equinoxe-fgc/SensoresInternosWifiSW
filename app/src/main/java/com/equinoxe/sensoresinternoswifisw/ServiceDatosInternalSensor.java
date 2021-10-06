@@ -25,6 +25,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -99,6 +100,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     int iPort;
     EnvioDatosSocket envioAsync;
 
+    String sFicheroLocal;
+    UploadFile upFile;
+
     @Override
     public void onCreate() {
         HandlerThread thread = new HandlerThread("ServiceDatosInternalSensor", HandlerThread.MIN_PRIORITY);
@@ -150,6 +154,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         } catch (NullPointerException e) {
             Log.e("NullPointerException", "ServiceDatosInternalSensor - onStartCommand");
         }
+
+        sFicheroLocal = Environment.getExternalStorageDirectory() + "/TempFile.txt";
 
         //createNotificationChannel();
         lNumMsgGiroscopo = 0;
@@ -324,7 +330,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         };
 
         if (bSendWifi) {
-            // Si el periodo es 0 se envía d eforma continua
+            upFile = new UploadFile();
+
+            // Si el periodo es 0 se envía de forma continua
             if (iSendPeriod == 0) {
                 envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
                 envioAsync.start();
@@ -463,9 +471,17 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     }
 
     private void enviarBuffers() {
-        envioAsync = new EnvioDatosSocket(sServer, iPort, dataToSend.length);
+        Object []params = {sServer, iPort, sFicheroLocal};
+        upFile.doInBackground(params);
+
+        /*envioAsync = new EnvioDatosSocket(sServer, iPort, dataToSend.length);
         envioAsync.start();
-        //envioAsync.connect();
+        //envioAsync.connect();*/
+
+        BufferedOutputStream fileOut;
+        try {
+            fileOut = new BufferedOutputStream(new FileOutputStream(sFicheroLocal));
+        } catch (Exception e) {}
 
         int iPosData = 0;
 
@@ -477,6 +493,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
                 iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
             }
+            fileOut.write(dataToSend);
         }
         if (bGiroscopo) {
             for (int i = 0; i < iTamBuffer; i++) {
@@ -508,7 +525,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         if (bHeartRate)
             System.arraycopy(dataHeartRate.getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
-        envioAsync.setData(dataToSend);
+        envioAsync.setData(dataToSend);*/
 
         controlSensors(SENSORS_ON);
     }
