@@ -1,55 +1,58 @@
 package com.equinoxe.sensoresinternoswifisw;
 
 
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 
 import org.apache.commons.net.ftp.*;
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class UploadFile extends AsyncTask {
-    byte []addr = {(byte)150, (byte)214, 59, 23};
-    FTPClient client = new FTPClient();
+public class UploadFile extends Thread {
+    //byte []addr = {(byte)150, (byte)214, 59, 23};
+    String sAddr;
+    String sFicheroLocal;
+    int iPort;
 
-    @Override
-    protected Object doInBackground(Object[] objects) {
-        try {
-            client.connect(InetAddress.getByAddress(addr), Integer.parseInt((String)objects[1]));
-            client.login("Equinoxe", "Frabela_1");
-
-            client.enterLocalActiveMode();
-            client.setFileType(FTP.BINARY_FILE_TYPE);
-
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
-            //String sFicheroLocal = Environment.getExternalStorageDirectory() + "/TempFile.txt";
-            String sFicheroLocal = (String) objects[2];
-            String sFicheroRemoto = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  sdf.format(new Date()) + ".txt";
-
-            client.storeUniqueFile(sFicheroRemoto, new FileInputStream(sFicheroLocal));
-
-        } catch (Exception e) {
-            Log.d("FTP", e.toString());
-            return false;
-        }
-
-        return false;
+    public UploadFile(String sAddr, int iPort, String sFicheroLocal) {
+        this.sAddr = sAddr;
+        this.sFicheroLocal = sFicheroLocal;
+        this.iPort = iPort;
     }
 
     @Override
-    protected void onPostExecute(Object o) {
-        super.onPostExecute(o);
+    public void run() {
+        try  {
+            byte []addr = {(byte)192, (byte)168, (byte)177, (byte)229};
+            FTPClient client = new FTPClient();
 
-        try {
-            client.disconnect();
-        } catch (IOException e) {}
+            try {
+                InetAddress iAddr = InetAddress.getByAddress(addr);
+                //int port = ((Integer) objects[1]).intValue();
+                client.connect(iAddr, iPort);
+
+                client.login("Equinoxe", "Frabela_1");
+
+                client.enterLocalActiveMode();
+                client.setFileType(FTP.BINARY_FILE_TYPE);
+
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
+                String sFicheroRemoto = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  sdf.format(new Date()) + ".txt";
+
+                client.storeUniqueFile(sFicheroRemoto, new FileInputStream(sFicheroLocal));
+
+                client.logout();
+                client.disconnect();
+            } catch (Exception e) {
+                Log.d("FTP", e.toString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

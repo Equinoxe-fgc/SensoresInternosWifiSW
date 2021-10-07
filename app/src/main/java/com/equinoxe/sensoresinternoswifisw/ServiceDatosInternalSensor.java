@@ -24,8 +24,8 @@ import android.os.Vibrator;
 import android.util.Log;
 import android.widget.Toast;
 
+
 import java.io.BufferedOutputStream;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -98,7 +98,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
     String sServer;
     int iPort;
-    EnvioDatosSocket envioAsync;
+    //EnvioDatosSocket envioAsync;
 
     String sFicheroLocal;
     UploadFile upFile;
@@ -319,23 +319,23 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         final TimerTask timerTaskCheckSendSensorsData = new TimerTask() {
             @Override
             public void run() {
-                if (envioAsync != null) {
+                /*if (envioAsync != null) {
                     if (envioAsync.isStarted() && !envioAsync.pendingDataToSend()) {
                         envioAsync.disconnect();
                         envioAsync.interrupt();
                         envioAsync = null;
                     }
-                }
+                }*/
             }
         };
 
         if (bSendWifi) {
-            upFile = new UploadFile();
+            //upFile = new UploadFile();
 
             // Si el periodo es 0 se envía de forma continua
             if (iSendPeriod == 0) {
-                envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
-                envioAsync.start();
+                /*envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
+                envioAsync.start();*/
                 //envioAsync.connect();
             } else {    // Si no es 0 es porque hay que enviar cada cierto tiempo y hay que controlarlo
                 timerSendBuffer = new Timer();
@@ -471,9 +471,6 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     }
 
     private void enviarBuffers() {
-        Object []params = {sServer, iPort, sFicheroLocal};
-        upFile.doInBackground(params);
-
         /*envioAsync = new EnvioDatosSocket(sServer, iPort, dataToSend.length);
         envioAsync.start();
         //envioAsync.connect();*/
@@ -481,51 +478,89 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         BufferedOutputStream fileOut;
         try {
             fileOut = new BufferedOutputStream(new FileOutputStream(sFicheroLocal));
-        } catch (Exception e) {}
 
-        int iPosData = 0;
+            int iPosData = 0;
 
-        if (bAcelerometro) {
-            for (int i = 0; i < iTamBuffer; i++) {
-                System.arraycopy(dataAccelerometer[iPosDataAccelerometer].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
+            if (bAcelerometro) {
+                for (int i = 0; i < iTamBuffer; i++) {
+                    System.arraycopy(dataAccelerometer[iPosDataAccelerometer].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
-                iPosData += SensorData.BYTES;
+                    iPosData += SensorData.BYTES;
 
-                iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
+                    iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
+                }
+                try {
+                    fileOut.write(dataToSend);
+                } catch (IOException e) {
+                    Toast.makeText(this, "Error sending accelerometer data", Toast.LENGTH_SHORT).show();
+                }
             }
-            fileOut.write(dataToSend);
-        }
-        if (bGiroscopo) {
-            for (int i = 0; i < iTamBuffer; i++) {
-                System.arraycopy(dataGyroscope[iPosDataGiroscope].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
+            if (bGiroscopo) {
+                for (int i = 0; i < iTamBuffer; i++) {
+                    System.arraycopy(dataGyroscope[iPosDataGiroscope].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
-                iPosData += SensorData.BYTES;
+                    iPosData += SensorData.BYTES;
 
-                iPosDataGiroscope = (iPosDataGiroscope + 1) % iTamBuffer;
+                    iPosDataGiroscope = (iPosDataGiroscope + 1) % iTamBuffer;
+                }
+                try {
+                    fileOut.write(dataToSend);
+                } catch (IOException e) {
+                    Toast.makeText(this, "Error writing gyroscope data", Toast.LENGTH_SHORT).show();
+                }
             }
-        }
-        if (bMagnetometro) {
-            for (int i = 0; i < iTamBuffer; i++) {
-                System.arraycopy(dataMagnetometer[iPosDataMagnetometer].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
+            if (bMagnetometro) {
+                for (int i = 0; i < iTamBuffer; i++) {
+                    System.arraycopy(dataMagnetometer[iPosDataMagnetometer].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
-                iPosData += SensorData.BYTES;
+                    iPosData += SensorData.BYTES;
 
-                iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
+                    iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
+                }
+                try {
+                    fileOut.write(dataToSend);
+                } catch (IOException e) {
+                    Toast.makeText(this, "Error writing magnetometer data", Toast.LENGTH_SHORT).show();
+                }
             }
-        }
-        if (bBarometer) {
-            for (int i = 0; i < iTamBuffer; i++) {
-                System.arraycopy(dataBarometer[iPosDataBarometer].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
+            if (bBarometer) {
+                for (int i = 0; i < iTamBuffer; i++) {
+                    System.arraycopy(dataBarometer[iPosDataBarometer].getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
-                iPosData += SensorData.BYTES;
+                    iPosData += SensorData.BYTES;
 
-                iPosDataBarometer = (iPosDataBarometer + 1) % iTamBuffer;
+                    iPosDataBarometer = (iPosDataBarometer + 1) % iTamBuffer;
+                }
+                try {
+                    fileOut.write(dataToSend);
+                } catch (IOException e) {
+                    Toast.makeText(this, "Error writing barometer data", Toast.LENGTH_SHORT).show();
+                }
             }
-        }
-        if (bHeartRate)
-            System.arraycopy(dataHeartRate.getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
+            if (bHeartRate) {
+                System.arraycopy(dataHeartRate.getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
 
-        envioAsync.setData(dataToSend);*/
+                try {
+                    fileOut.write(dataToSend);
+                } catch (IOException e) {
+                    Toast.makeText(this, "Error writing heart rate data", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            try {
+                fileOut.close();
+            } catch (IOException e) {
+            }
+
+            //envioAsync.setData(dataToSend);
+            //Object []params = {sServer, iPort, sFicheroLocal};
+            //upFile.doInBackground(params);
+
+            upFile = new UploadFile(sServer, iPort, sFicheroLocal);
+            upFile.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         controlSensors(SENSORS_ON);
     }
@@ -707,8 +742,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                     }
                 }
 
-                if (bSendWifi && iSendPeriod == 0)
-                    envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
+                //if (bSendWifi && iSendPeriod == 0)
+                    //envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
 
                 if (bSaveSensedData)
                     try {
@@ -722,7 +757,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             case Sensor.TYPE_GYROSCOPE:
                 dataGyroscope[iPosDataGiroscope].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
-                    envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGyroscope[iPosDataGiroscope].getBytes());
+                    //envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGyroscope[iPosDataGiroscope].getBytes());
 
                 if (bSaveSensedData)
                     try {
@@ -736,7 +771,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             case Sensor.TYPE_MAGNETIC_FIELD:
                 dataMagnetometer[iPosDataMagnetometer].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
-                    envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
+                    //envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
 
                 if (bSaveSensedData)
                     try {
@@ -750,7 +785,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             case Sensor.TYPE_PRESSURE:
                 dataBarometer[iPosDataBarometer].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
-                    envioAsync.setData((byte) Sensor.TYPE_PRESSURE, dataBarometer[iPosDataBarometer].getBytes());
+                    //envioAsync.setData((byte) Sensor.TYPE_PRESSURE, dataBarometer[iPosDataBarometer].getBytes());
 
                 if (bSaveSensedData)
                     try {
@@ -834,9 +869,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         }
 
         try {
-            if (bSendWifi && iSendPeriod == 0)
+            /*if (bSendWifi && iSendPeriod == 0)
                 envioAsync.disconnect();
-                envioAsync.interrupt();
+                envioAsync.interrupt();*/
         }
         catch (Throwable throwable) {
             throwable.printStackTrace();

@@ -11,8 +11,7 @@ android {
             keyPassword 'frabela1'
         }
     }
-    compileSdkVersion 28
-    buildToolsVersion '29.0.3'
+    compileSdkVersion 31
 
     defaultConfig {
         applicationId "com.equinoxe.sensoresinternoswifisw"
@@ -38,8 +37,8 @@ dependencies {
     implementation 'com.google.android.gms:play-services-wearable:17.1.0'
     implementation 'androidx.percentlayout:percentlayout:1.0.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.recyclerview:recyclerview:1.2.0'
-    implementation 'androidx.wear:wear:1.1.0'
-    implementation files('D:\\Documents\\GitHub\\SensoresInternosWifiSW\\app\\src\\main\\res\\Dependency\\commons-net-ftp-2.0.jar')
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    implementation 'androidx.wear:wear:1.2.0'
+    implementation 'org.kie.modules:org-apache-commons-net:6.5.0.Final'
     compileOnly 'com.google.android.wearable:wearable:2.8.1'
 }
