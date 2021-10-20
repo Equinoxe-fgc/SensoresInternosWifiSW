@@ -44,4 +44,7 @@
     <string name="defaultServerIP">150.214.59.23</string>
     <string name="defaultSubject">Subject_1</string>
     <string name="Barometer">Barometer</string>
+    <string name="FTP">FTP</string>
+    <string name="DirectSend">Direct send</string>
+    <string name="FTPPort">21</string>
 </resources>

@@ -28,23 +28,22 @@ public class UploadFile extends Thread {
     @Override
     public void run() {
         try  {
-            byte []addr = {(byte)192, (byte)168, (byte)177, (byte)229};
+            //byte []addr = {(byte)192, (byte)168, (byte)177, (byte)229};
             FTPClient client = new FTPClient();
 
             try {
-                InetAddress iAddr = InetAddress.getByAddress(addr);
-                //int port = ((Integer) objects[1]).intValue();
+                InetAddress iAddr = InetAddress.getByName(sAddr);
                 client.connect(iAddr, iPort);
 
-                client.login("Equinoxe", "Frabela_1");
+                if (client.login("Equinoxe", "Frabela_1")) {
+                    client.enterLocalPassiveMode();
+                    client.setFileType(FTP.BINARY_FILE_TYPE);
 
-                client.enterLocalActiveMode();
-                client.setFileType(FTP.BINARY_FILE_TYPE);
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
+                    String sFicheroRemoto = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" + sdf.format(new Date()) + ".txt";
 
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
-                String sFicheroRemoto = Environment.getExternalStorageDirectory() + "/" + Build.MODEL + "_" +  sdf.format(new Date()) + ".txt";
-
-                client.storeUniqueFile(sFicheroRemoto, new FileInputStream(sFicheroLocal));
+                    client.storeFile(sFicheroRemoto, new FileInputStream(sFicheroLocal));
+                }
 
                 client.logout();
                 client.disconnect();

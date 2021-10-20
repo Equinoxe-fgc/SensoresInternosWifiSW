@@ -52,6 +52,27 @@
                 android:layout_weight="1"
                 android:orientation="vertical">
 
+                <RadioGroup
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1">
+
+                    <RadioButton
+                        android:id="@+id/rbFTPSend"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/FTP"
+                        android:translationX="40dp"
+                        android:translationY="5dp" />
+
+                    <RadioButton
+                        android:id="@+id/rbDirectSend"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/DirectSend"
+                        android:translationX="40dp" />
+                </RadioGroup>
+
                 <TextView
                     android:id="@+id/textView"
                     android:layout_width="match_parent"
@@ -83,6 +104,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:editable="false"
                     android:ems="10"
                     android:inputType="phone"
                     android:textAlignment="center"

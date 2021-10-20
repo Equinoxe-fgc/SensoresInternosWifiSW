@@ -6,6 +6,7 @@ import android.util.Patterns;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
+import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -17,6 +18,9 @@ public class Options extends FragmentActivity {
     private CheckBox checkBoxFastON, checkBoxWifi, checkThreshold, checkVibrate, checkSaveSensedData;
     private TextView txtWindowSize, txtSendPeriod, txtThreshold, txtSubjectName;
     private LinearLayout layoutSendPeriod, layoutThreshold, layoutServerData;
+    private RadioButton rbFTPSend, rbDirectSend;
+
+    boolean bFTPSend;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +44,9 @@ public class Options extends FragmentActivity {
         layoutThreshold = findViewById(R.id.layoutThreshold);
         layoutServerData = findViewById(R.id.layoutServerData);
 
+        rbDirectSend = findViewById(R.id.rbDirectSend);
+        rbFTPSend = findViewById(R.id.rbFTPSend);
+
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
         txtSubjectName.setText(pref.getString("SubjectName", getResources().getText(R.string.defaultSubject).toString()));
         txtServer.setText(pref.getString("server", getResources().getText(R.string.defaultServerIP).toString()));
@@ -48,6 +55,10 @@ public class Options extends FragmentActivity {
         checkBoxFastON.setChecked(pref.getBoolean("FastON", false));
 
         checkBoxWifi.setChecked(pref.getBoolean("Wifi", false));
+        bFTPSend = pref.getBoolean("FTPSend", true);
+        if (bFTPSend)
+            rbFTPSend.toggle();
+
         sCadena = "" + pref.getInt("WindowSize", 3000);
         txtWindowSize.setText(sCadena);
         sCadena = "" + pref.getInt("SendPeriod", 600);
@@ -62,6 +73,8 @@ public class Options extends FragmentActivity {
         if (checkBoxWifi.isChecked()) {
             layoutSendPeriod.setVisibility(View.VISIBLE);
             layoutServerData.setVisibility(View.VISIBLE);
+            if (bFTPSend)
+                txtPuerto.setText(getResources().getText(R.string.FTPPort));
         } else {
             layoutSendPeriod.setVisibility(View.GONE);
             layoutServerData.setVisibility(View.GONE);
@@ -108,6 +121,7 @@ public class Options extends FragmentActivity {
                 editor.putInt("puerto", Integer.parseInt(txtPuerto.getText().toString()));
                 editor.putBoolean("FastON", checkBoxFastON.isChecked());
                 editor.putBoolean("Wifi", checkBoxWifi.isChecked());
+                editor.putBoolean("FTP", rbFTPSend.isChecked());
                 editor.putBoolean("Threshold_ONOFF", checkThreshold.isChecked());
 
                 editor.putInt("WindowSize", Integer.parseInt(txtWindowSize.getText().toString()));
