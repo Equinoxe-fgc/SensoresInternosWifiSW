@@ -49,7 +49,7 @@ public class EnvioDatosSocket extends Thread {
         return bStarted;
     }
 
-    public void connect() {
+    private void connect() {
         try {
             socket = new Socket(sServer, iPuerto);
             Log.d("EnvioDatosSocket.java", "Socket creado");

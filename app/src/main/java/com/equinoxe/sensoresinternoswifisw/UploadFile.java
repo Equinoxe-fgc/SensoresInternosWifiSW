@@ -29,6 +29,8 @@ public class UploadFile extends Thread {
     public void run() {
         try  {
             //byte []addr = {(byte)192, (byte)168, (byte)177, (byte)229};
+            //String sAddr = "192.168.43.168";
+            String sAddr = "192.168.1.34";
             FTPClient client = new FTPClient();
 
             try {

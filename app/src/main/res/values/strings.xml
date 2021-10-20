@@ -4,7 +4,7 @@
     This string is used for square devices and overridden by hello_world in
     values-round/strings.xml for round devices.
     -->
-    <string name="ReleaseDate">30/08/2021</string>
+    <string name="ReleaseDate">20/10/2021</string>
 
     <string name="ERROR_FICHERO">Error opening file</string>
     <string name="title_activity_sensado">Sensado</string>
@@ -47,4 +47,5 @@
     <string name="FTP">FTP</string>
     <string name="DirectSend">Direct send</string>
     <string name="FTPPort">21</string>
+    <string name="DirectSendPort">8000</string>
 </resources>

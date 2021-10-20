@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Patterns;
 import android.view.View;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
@@ -58,6 +59,8 @@ public class Options extends FragmentActivity {
         bFTPSend = pref.getBoolean("FTPSend", true);
         if (bFTPSend)
             rbFTPSend.toggle();
+        else
+            rbDirectSend.toggle();
 
         sCadena = "" + pref.getInt("WindowSize", 3000);
         txtWindowSize.setText(sCadena);
@@ -108,6 +111,22 @@ public class Options extends FragmentActivity {
                     layoutSendPeriod.setVisibility(View.VISIBLE);
             }
         });
+
+        rbDirectSend.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (b)
+                    txtPuerto.setText(getResources().getString(R.string.DirectSendPort));
+            }
+        });
+
+        rbFTPSend.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                if (b)
+                    txtPuerto.setText(getResources().getString(R.string.FTPPort));
+            }
+        });
     }
 
     public void onClickSaveSettings(View v) {
@@ -121,7 +140,7 @@ public class Options extends FragmentActivity {
                 editor.putInt("puerto", Integer.parseInt(txtPuerto.getText().toString()));
                 editor.putBoolean("FastON", checkBoxFastON.isChecked());
                 editor.putBoolean("Wifi", checkBoxWifi.isChecked());
-                editor.putBoolean("FTP", rbFTPSend.isChecked());
+                editor.putBoolean("FTPSend", rbFTPSend.isChecked());
                 editor.putBoolean("Threshold_ONOFF", checkThreshold.isChecked());
 
                 editor.putInt("WindowSize", Integer.parseInt(txtWindowSize.getText().toString()));

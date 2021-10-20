@@ -98,7 +98,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
     String sServer;
     int iPort;
-    //EnvioDatosSocket envioAsync;
+    boolean bFTP;
+    EnvioDatosSocket envioAsync;
 
     String sFicheroLocal;
     UploadFile upFile;
@@ -182,6 +183,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         sSubjectName = pref.getString("SubjectName", getResources().getText(R.string.defaultSubject).toString());
         sServer = pref.getString("server", getResources().getText(R.string.defaultServerIP).toString());
         iPort = pref.getInt("puerto", 8000);
+        bFTP = (iPort == 21);
+
         bFastestON = pref.getBoolean("FastON", false);
         bSendWifi = pref.getBoolean("Wifi", false);
         iWindowSize = pref.getInt("WindowSize", 3000);
@@ -319,24 +322,23 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         final TimerTask timerTaskCheckSendSensorsData = new TimerTask() {
             @Override
             public void run() {
-                /*if (envioAsync != null) {
+                if (envioAsync != null) {
                     if (envioAsync.isStarted() && !envioAsync.pendingDataToSend()) {
                         envioAsync.disconnect();
                         envioAsync.interrupt();
                         envioAsync = null;
                     }
-                }*/
+                }
             }
         };
 
         if (bSendWifi) {
-            //upFile = new UploadFile();
-
             // Si el periodo es 0 se envía de forma continua
             if (iSendPeriod == 0) {
-                /*envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
-                envioAsync.start();*/
-                //envioAsync.connect();
+                if (!bFTP) {
+                    envioAsync = new EnvioDatosSocket(sServer, iPort, SensorData.BYTES + 1);
+                    envioAsync.start();
+                }
             } else {    // Si no es 0 es porque hay que enviar cada cierto tiempo y hay que controlarlo
                 timerSendBuffer = new Timer();
                 timerSendBuffer.scheduleAtFixedRate(timerTaskSendBuffer, INITIAL_SEND_MS, iSendPeriod * 1000);
@@ -471,9 +473,10 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
     }
 
     private void enviarBuffers() {
-        /*envioAsync = new EnvioDatosSocket(sServer, iPort, dataToSend.length);
-        envioAsync.start();
-        //envioAsync.connect();*/
+        if (!bFTP) {
+            envioAsync = new EnvioDatosSocket(sServer, iPort, dataToSend.length);
+            envioAsync.start();
+        }
 
         BufferedOutputStream fileOut;
         try {
@@ -552,12 +555,12 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             } catch (IOException e) {
             }
 
-            //envioAsync.setData(dataToSend);
-            //Object []params = {sServer, iPort, sFicheroLocal};
-            //upFile.doInBackground(params);
-
-            upFile = new UploadFile(sServer, iPort, sFicheroLocal);
-            upFile.start();
+            if (!bFTP) {
+                envioAsync.setData(dataToSend);
+            } else {
+                upFile = new UploadFile(sServer, iPort, sFicheroLocal);
+                upFile.start();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -742,8 +745,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                     }
                 }
 
-                //if (bSendWifi && iSendPeriod == 0)
-                    //envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
+                if (bSendWifi && iSendPeriod == 0)
+                    envioAsync.setData((byte) Sensor.TYPE_ACCELEROMETER, dataAccelerometer[iPosDataAccelerometer].getBytes());
 
                 if (bSaveSensedData)
                     try {
@@ -757,7 +760,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             case Sensor.TYPE_GYROSCOPE:
                 dataGyroscope[iPosDataGiroscope].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
-                    //envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGyroscope[iPosDataGiroscope].getBytes());
+                    envioAsync.setData((byte) Sensor.TYPE_GYROSCOPE, dataGyroscope[iPosDataGiroscope].getBytes());
 
                 if (bSaveSensedData)
                     try {
@@ -771,7 +774,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             case Sensor.TYPE_MAGNETIC_FIELD:
                 dataMagnetometer[iPosDataMagnetometer].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
-                    //envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
+                    envioAsync.setData((byte) Sensor.TYPE_MAGNETIC_FIELD, dataMagnetometer[iPosDataMagnetometer].getBytes());
 
                 if (bSaveSensedData)
                     try {
@@ -785,7 +788,7 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             case Sensor.TYPE_PRESSURE:
                 dataBarometer[iPosDataBarometer].setData(timeStamp, values);
                 if (bSendWifi && iSendPeriod == 0)
-                    //envioAsync.setData((byte) Sensor.TYPE_PRESSURE, dataBarometer[iPosDataBarometer].getBytes());
+                    envioAsync.setData((byte) Sensor.TYPE_PRESSURE, dataBarometer[iPosDataBarometer].getBytes());
 
                 if (bSaveSensedData)
                     try {
@@ -869,9 +872,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
         }
 
         try {
-            /*if (bSendWifi && iSendPeriod == 0)
+            if (bSendWifi && iSendPeriod == 0)
                 envioAsync.disconnect();
-                envioAsync.interrupt();*/
+                envioAsync.interrupt();
         }
         catch (Throwable throwable) {
             throwable.printStackTrace();
