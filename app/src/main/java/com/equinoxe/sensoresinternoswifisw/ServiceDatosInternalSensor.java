@@ -297,6 +297,8 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                 iMultiplicador++;
 
             // Se pide memoria para mandar un buffer con todos los datos de los sensores y un dato de HR
+            int iTamDataToSend = (iMultiplicador * iTamBuffer * SensorData.BYTES) + SensorData.BYTES;
+
             dataToSend = new byte[(iMultiplicador * iTamBuffer * SensorData.BYTES) + SensorData.BYTES];
         }
 
@@ -478,9 +480,9 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
             envioAsync.start();
         }
 
-        BufferedOutputStream fileOut;
+        //BufferedOutputStream fileOut;
         try {
-            fileOut = new BufferedOutputStream(new FileOutputStream(sFicheroLocal));
+            //fileOut = new BufferedOutputStream(new FileOutputStream(sFicheroLocal));
 
             int iPosData = 0;
 
@@ -492,11 +494,6 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
                     iPosDataAccelerometer = (iPosDataAccelerometer + 1) % iTamBuffer;
                 }
-                try {
-                    fileOut.write(dataToSend);
-                } catch (IOException e) {
-                    Toast.makeText(this, "Error sending accelerometer data", Toast.LENGTH_SHORT).show();
-                }
             }
             if (bGiroscopo) {
                 for (int i = 0; i < iTamBuffer; i++) {
@@ -505,11 +502,6 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
                     iPosData += SensorData.BYTES;
 
                     iPosDataGiroscope = (iPosDataGiroscope + 1) % iTamBuffer;
-                }
-                try {
-                    fileOut.write(dataToSend);
-                } catch (IOException e) {
-                    Toast.makeText(this, "Error writing gyroscope data", Toast.LENGTH_SHORT).show();
                 }
             }
             if (bMagnetometro) {
@@ -520,11 +512,6 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
                     iPosDataMagnetometer = (iPosDataMagnetometer + 1) % iTamBuffer;
                 }
-                try {
-                    fileOut.write(dataToSend);
-                } catch (IOException e) {
-                    Toast.makeText(this, "Error writing magnetometer data", Toast.LENGTH_SHORT).show();
-                }
             }
             if (bBarometer) {
                 for (int i = 0; i < iTamBuffer; i++) {
@@ -534,31 +521,22 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
                     iPosDataBarometer = (iPosDataBarometer + 1) % iTamBuffer;
                 }
-                try {
-                    fileOut.write(dataToSend);
-                } catch (IOException e) {
-                    Toast.makeText(this, "Error writing barometer data", Toast.LENGTH_SHORT).show();
-                }
             }
             if (bHeartRate) {
                 System.arraycopy(dataHeartRate.getBytes(), 0, dataToSend, iPosData, SensorData.BYTES);
-
-                try {
-                    fileOut.write(dataToSend);
-                } catch (IOException e) {
-                    Toast.makeText(this, "Error writing heart rate data", Toast.LENGTH_SHORT).show();
-                }
             }
 
-            try {
+            /*try {
+                fileOut.write(dataToSend);
                 fileOut.close();
             } catch (IOException e) {
-            }
+                Toast.makeText(this, "Error writing data to file", Toast.LENGTH_SHORT).show();
+            }*/
 
             if (!bFTP) {
                 envioAsync.setData(dataToSend);
             } else {
-                upFile = new UploadFile(sServer, iPort, sFicheroLocal);
+                upFile = new UploadFile(sServer, iPort, dataToSend);
                 upFile.start();
             }
         } catch (Exception e) {
