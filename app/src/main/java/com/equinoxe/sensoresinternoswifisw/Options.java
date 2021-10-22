@@ -51,7 +51,7 @@ public class Options extends FragmentActivity {
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
         txtSubjectName.setText(pref.getString("SubjectName", getResources().getText(R.string.defaultSubject).toString()));
         txtServer.setText(pref.getString("server", getResources().getText(R.string.defaultServerIP).toString()));
-        String sCadena = "" + pref.getInt("puerto", 8000);
+        String sCadena = "" + pref.getInt("puerto", Integer.parseInt(getResources().getString(R.string.DirectSendPort)));
         txtPuerto.setText(sCadena);
         checkBoxFastON.setChecked(pref.getBoolean("FastON", false));
 
@@ -62,9 +62,9 @@ public class Options extends FragmentActivity {
         else
             rbDirectSend.toggle();
 
-        sCadena = "" + pref.getInt("WindowSize", 3000);
+        sCadena = "" + pref.getInt("WindowSize", Integer.parseInt(getResources().getString(R.string.DefaultWindowsSize)));
         txtWindowSize.setText(sCadena);
-        sCadena = "" + pref.getInt("SendPeriod", 600);
+        sCadena = "" + pref.getInt("SendPeriod", Integer.parseInt(getResources().getString(R.string.DefaultSendPeriod)));
         txtSendPeriod.setText(sCadena);
 
         checkThreshold.setChecked(pref.getBoolean("Threshold_ONOFF", false));

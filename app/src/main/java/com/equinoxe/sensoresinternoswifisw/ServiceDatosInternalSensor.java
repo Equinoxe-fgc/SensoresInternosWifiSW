@@ -182,13 +182,13 @@ public class ServiceDatosInternalSensor extends Service implements SensorEventLi
 
         sSubjectName = pref.getString("SubjectName", getResources().getText(R.string.defaultSubject).toString());
         sServer = pref.getString("server", getResources().getText(R.string.defaultServerIP).toString());
-        iPort = pref.getInt("puerto", 8000);
+        iPort = pref.getInt("puerto", Integer.parseInt(getResources().getString(R.string.DirectSendPort)));
         bFTP = (iPort == 21);
 
         bFastestON = pref.getBoolean("FastON", false);
         bSendWifi = pref.getBoolean("Wifi", false);
-        iWindowSize = pref.getInt("WindowSize", 3000);
-        iSendPeriod = pref.getInt("SendPeriod", 600);
+        iWindowSize = pref.getInt("WindowSize", Integer.parseInt(getResources().getString(R.string.DefaultWindowsSize)));
+        iSendPeriod = pref.getInt("SendPeriod", Integer.parseInt(getResources().getString(R.string.DefaultSendPeriod)));
 
         bThreshold = pref.getBoolean("Threshold_ONOFF", false);
         //fThreshold = pref.getFloat("Threshold", 2.5f);

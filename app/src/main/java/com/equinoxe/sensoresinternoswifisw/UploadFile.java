@@ -8,7 +8,7 @@ import android.util.Log;
 import org.apache.commons.net.ftp.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
@@ -16,27 +16,22 @@ import java.util.Date;
 import java.util.Locale;
 
 public class UploadFile extends Thread {
-    //byte []addr = {(byte)150, (byte)214, 59, 23};
     String sAddr;
-    //String sFicheroLocal;
     byte [] localDataToSend;
     int iPort;
 
     public UploadFile(String sAddr, int iPort, byte []dataToSend) {
         this.sAddr = sAddr;
         this.iPort = iPort;
-        //this.sFicheroLocal = sFicheroLocal;
         localDataToSend = new byte[dataToSend.length];
         System.arraycopy(dataToSend, 0, localDataToSend, 0, dataToSend.length);
     }
 
     @Override
     public void run() {
-        try  {
-            //byte []addr = {(byte)192, (byte)168, (byte)177, (byte)229};
             //String sAddr = "192.168.43.168";
             //String sAddr = "192.168.1.34";
-            String sAddr = "192.168.177.229";
+            //String sAddr = "192.168.177.229";
             FTPClient client = new FTPClient();
 
             try {
@@ -52,16 +47,22 @@ public class UploadFile extends Thread {
 
                     InputStream is = new ByteArrayInputStream(localDataToSend);
                     client.storeFile(sFicheroRemoto, is);
-                    //client.storeFile(sFicheroRemoto, new FileInputStream(sFicheroLocal));
                 }
 
                 client.logout();
                 client.disconnect();
-            } catch (Exception e) {
-                Log.d("FTP", e.toString());
+            } catch (Exception e1) {
+                Log.d("FTP", e1.toString());
+                String sFichero = Environment.getExternalStorageDirectory() + "/FTPError.txt";
+
+                try {
+                    FileOutputStream fOut = new FileOutputStream(sFichero, true);
+                    String sCadena = e1.getMessage() + "\n";
+                    fOut.write(sCadena.getBytes());
+                    fOut.close();
+                } catch (Exception e2) {
+                    Log.d("FTP", e2.toString());
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }
