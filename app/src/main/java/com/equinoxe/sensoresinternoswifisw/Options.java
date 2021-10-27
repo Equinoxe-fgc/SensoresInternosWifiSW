@@ -51,7 +51,7 @@ public class Options extends FragmentActivity {
         SharedPreferences pref = getApplicationContext().getSharedPreferences("Settings", MODE_PRIVATE);
         txtSubjectName.setText(pref.getString("SubjectName", getResources().getText(R.string.defaultSubject).toString()));
         txtServer.setText(pref.getString("server", getResources().getText(R.string.defaultServerIP).toString()));
-        String sCadena = "" + pref.getInt("puerto", Integer.parseInt(getResources().getString(R.string.DirectSendPort)));
+        String sCadena = "" + pref.getInt("puerto", Integer.parseInt(getResources().getString(R.string.FTPPort)));
         txtPuerto.setText(sCadena);
         checkBoxFastON.setChecked(pref.getBoolean("FastON", false));
 

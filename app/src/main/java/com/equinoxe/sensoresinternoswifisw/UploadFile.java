@@ -33,6 +33,7 @@ public class UploadFile extends Thread {
             //String sAddr = "192.168.1.34";
             //String sAddr = "192.168.177.229";
             FTPClient client = new FTPClient();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
 
             try {
                 InetAddress iAddr = InetAddress.getByName(sAddr);
@@ -42,7 +43,6 @@ public class UploadFile extends Thread {
                     client.enterLocalPassiveMode();
                     client.setFileType(FTP.BINARY_FILE_TYPE);
 
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
                     String sFicheroRemoto = Build.MODEL + "/" + Build.MODEL + "_" + sdf.format(new Date()) + ".txt";
 
                     InputStream is = new ByteArrayInputStream(localDataToSend);
@@ -57,7 +57,8 @@ public class UploadFile extends Thread {
 
                 try {
                     FileOutputStream fOut = new FileOutputStream(sFichero, true);
-                    String sCadena = e1.getMessage() + "\n";
+                    sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.UK);
+                    String sCadena = sdf.format(new Date()) + " - " + e1.getMessage() + "\n";
                     fOut.write(sCadena.getBytes());
                     fOut.close();
                 } catch (Exception e2) {
